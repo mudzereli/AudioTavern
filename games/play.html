@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TTAGames</title>
+    <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../css/tokens.css" />
+    <link rel="stylesheet" href="../css/game.css" />
+  </head>
+  <body class="page page--game">
+    <main class="shell" data-shell hidden></main>
+    <main class="shell" data-error role="status" aria-live="polite">
+      <p class="message">Loading table...</p>
+      <p class="message"><a href="../index.html">Return to the tavern</a></p>
+    </main>
+    <script type="module">
+      import { gameById } from '../js/games.config.js';
+      import { mountShell } from '../js/shell.js';
+
+      const id = new URLSearchParams(window.location.search).get('game');
+      const config = gameById(id);
+      const shell = document.querySelector('[data-shell]');
+      const error = document.querySelector('[data-error]');
+
+      if (config) {
+        const stylesheet = document.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = `../css/games/${config.id}.css`;
+
+        try {
+          const [gameModule] = await Promise.all([
+            import(`../js/games/${config.id}.js`),
+            new Promise((resolve, reject) => {
+              stylesheet.addEventListener('load', resolve, { once: true });
+              stylesheet.addEventListener('error', reject, { once: true });
+              document.head.append(stylesheet);
+            }),
+          ]);
+
+          error.hidden = true;
+          shell.hidden = false;
+          mountShell(config, gameModule.default);
+        } catch {
+          error.setAttribute('role', 'alert');
+          error.querySelector('.message').textContent = 'This table could not be loaded.';
+        }
+      } else {
+        error.setAttribute('role', 'alert');
+        error.querySelector('.message').textContent = 'That table could not be found.';
+      }
+    </script>
+  </body>
+</html>

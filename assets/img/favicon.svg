@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Dice">
+  <rect width="64" height="64" rx="14" fill="#0a0908"/>
+  <rect x="10" y="10" width="44" height="44" rx="11" fill="#deb887" transform="rotate(-12 32 32)"/>
+  <g fill="#1a1512">
+    <circle cx="23" cy="23" r="4.2"/>
+    <circle cx="41" cy="26" r="4.2"/>
+    <circle cx="24" cy="40" r="4.2"/>
+    <circle cx="41" cy="43" r="4.2"/>
+  </g>
+</svg>

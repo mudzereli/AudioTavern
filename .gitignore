@@ -1,0 +1,14 @@
+# Dependencies (there are none, but keep the door shut)
+node_modules/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+
+# NOTE: no audio files belong in this repo.
+# Every table links out to Tabletop Audio instead of streaming locally,
+# so the site stays small and their bandwidth is used the way they intend
+# (through their own player, on their own page).

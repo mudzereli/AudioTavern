@@ -1,0 +1,8 @@
+.pig {
+  display: grid;
+  gap: 1.1rem;
+  justify-items: center;
+}
+
+.pig__total { font-family: var(--font-num); font-size: 2.6rem; color: var(--accent); }
+.pig__actions { display: flex; gap: 0.6rem; }

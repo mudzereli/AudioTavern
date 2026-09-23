@@ -1,0 +1,24 @@
+.pairs { display: grid; justify-items: center; }
+
+.pairs__board {
+  width: min(470px, 100%);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.pairs__card { padding: 0; border: 0; border-radius: 10px; background: none; cursor: pointer; }
+.pairs__card:disabled { cursor: default; }
+
+.pairs__card .card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 92 / 132;
+  container-type: inline-size;
+}
+
+.pairs__card .card__corner { top: 7.5cqw; left: 9.5cqw; }
+.pairs__card .card__rank { font-size: 17cqw; }
+.pairs__card .card__suit { font-size: 15.5cqw; }
+.pairs__card .card__pip { font-size: 45cqw; }
+.pairs__card--matched { opacity: 0.55; }
