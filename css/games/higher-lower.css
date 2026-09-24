@@ -1,20 +1,77 @@
 .hl {
   display: grid;
-  gap: 1.3rem;
+  gap: 1.1rem;
   justify-items: center;
 }
+
+/* The pot — the stake, above the cards ------------------------------------- */
+
+.hl__pot {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  min-width: 158px;
+  padding: 0.45rem 1.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+.hl__pot-value {
+  font-family: var(--font-num);
+  font-size: 2.4rem;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.hl__pot-cap {
+  font-family: var(--font-num);
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Banked: off the table and into the score. */
+.hl__pot--banked .hl__pot-value { color: var(--ink); }
+.hl__pot--banked .hl__pot-cap { color: var(--ink-2); }
+
+/* Lost: the pot the hand ended on, before the next hand clears it. */
+.hl__pot--lost { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.hl__pot--lost .hl__pot-value,
+.hl__pot--lost .hl__pot-cap { color: var(--bad); }
+
+.hl--lastcall .hl__pot { border-color: var(--accent-line); }
+.hl--lastcall .hl__pot-cap { color: var(--accent); }
+
+/* Cards -------------------------------------------------------------------- */
 
 .hl__pair { display: flex; align-items: center; gap: 1.2rem; min-height: 132px; }
 .hl__slot { display: grid; place-items: center; min-width: 92px; min-height: 132px; }
 .hl__arrow { font-family: var(--font-num); font-size: 1rem; color: var(--ink-3); }
+
+/* The calls ---------------------------------------------------------------- */
+
 .hl__calls { display: flex; gap: 0.6rem; }
-.hl__calls[hidden] { display: none; }
-.hl__next { justify-self: center; }
+.hl__call { min-width: 136px; }
+
+/* Bank --------------------------------------------------------------------- */
+
+.hl__bank {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  justify-self: center;
+}
+
+.hl__bank-value { font-family: var(--font-num); }
+
+/* Readout ------------------------------------------------------------------ */
 
 .hl__stats {
-  width: min(360px, 100%);
+  width: min(430px, 100%);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--line);
 }
 
@@ -28,4 +85,4 @@
 .hl__stat + .hl__stat { border-left: 1px solid var(--line); }
 .hl__stat-label { font-size: 0.78rem; color: var(--ink-2); text-align: center; }
 .hl__stat-value { font-family: var(--font-num); font-size: 1.6rem; color: var(--ink); }
-.hl__stat--best .hl__stat-value { color: var(--accent); }
+.hl__stat--next .hl__stat-value { color: var(--accent); }
