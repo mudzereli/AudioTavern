@@ -2,13 +2,12 @@
    Pig — roll and bank.
 
    Roll to build a round total, but a single one wipes the round and takes the
-   whole lot with it. Banking keeps what you have and starts again.
-
-  this.roundLabelEl.textContent = 'this round';
-   The nerve is the game: every extra roll is worth more and risks more.
+   whole lot with it. Banking keeps what you have and starts again. The nerve is
+   the game: every extra roll is worth more and risks more.
    --------------------------------------------------------------------------- */
 
 import { renderDice, roll } from '../dice.js';
+import { plural } from '../dom.js';
 
 /** Pause after a bust or a bank, long enough to see what you got. */
 const BEAT_MS = 950;
@@ -174,7 +173,7 @@ const game = {
     ctx.setActionLabel('Roll');
     ctx.setActionEnabled(false);
     ctx.message(earnedTokens
-      ? `Banked ${banked}. Earned ${earnedTokens} reroll${earnedTokens === 1 ? '' : 's'}.`
+      ? `Banked ${banked}. Earned ${earnedTokens} ${plural(earnedTokens, 'reroll')}.`
       : `Banked ${banked}.`);
     this.settle(ctx);
   },

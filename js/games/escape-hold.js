@@ -6,6 +6,8 @@
   can end the round before the player reaches the hatch.
    --------------------------------------------------------------------------- */
 
+import { plural } from '../dom.js';
+
 const COLS = 5;
 const ROWS = 5;
 const START = (ROWS - 1) * COLS + Math.floor(COLS / 2);
@@ -268,7 +270,7 @@ const game = {
       // The streak is the score: the first escape is worth 1, the next 2, and so on.
       this.ctx.addPoints(this.successfulEscapes);
       this.paint();
-      this.ctx.message(`Hatch found. Escape streak ${this.successfulEscapes}${record ? ', best yet' : ''}, worth ${this.successfulEscapes} point${this.successfulEscapes === 1 ? '' : 's'}. The pursuer is quicker next round.`);
+      this.ctx.message(`Hatch found. Escape streak ${this.successfulEscapes}${record ? ', best yet' : ''}, worth ${this.successfulEscapes} ${plural(this.successfulEscapes, 'point')}. The pursuer is quicker next round.`);
       this.settle();
       return;
     }

@@ -5,6 +5,8 @@
    returning cargo to the skiff. No two expeditions have the same route costs.
    --------------------------------------------------------------------------- */
 
+import { el } from '../dom.js';
+
 const MAX_STORM = 18;
 const BEAT_MS = 1050;
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -32,13 +34,6 @@ function distanceBetween(first, second) {
   const dx = LOCATIONS[first].x - LOCATIONS[second].x;
   const dy = LOCATIONS[first].y - LOCATIONS[second].y;
   return Math.hypot(dx, dy);
-}
-
-function el(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text != null) element.textContent = text;
-  return element;
 }
 
 const game = {

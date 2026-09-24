@@ -12,6 +12,7 @@
    single-action bar. Left and right arrows work too.
    --------------------------------------------------------------------------- */
 
+import { el } from '../dom.js';
 import { pick, shuffle } from '../rng.js';
 
 const TICK_MS = 40;
@@ -115,13 +116,6 @@ const LET_IN = 'You held out a cake. It took your hand instead.';
 const TURNED_AWAY = 'You barred the door on a living child, and word travels the lane faster than you do.';
 const LATE_CALL = 'You did not answer, and the latch lifted by itself.';
 const DAWN_AGAIN = 'Grey light on the roofs. The dead have gone home, and you have another night in you.';
-
-function el(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text != null) element.textContent = text;
-  return element;
-}
 
 function nightCopy(night) {
   return night === 1

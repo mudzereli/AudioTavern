@@ -8,6 +8,8 @@
    danced without a misstep is what raises the multiplier.
    --------------------------------------------------------------------------- */
 
+import { el, plural } from '../dom.js';
+
 const TICK_MS = 40;
 
 /** Tempo follows the multiplier: the deeper you go, the faster the beat, and a
@@ -49,13 +51,6 @@ const MULTIPLIER_CAP = 6;
 
 /** Pause on the failure and success screens, long enough to read them. */
 const SETTLE_MS = 950;
-
-function el(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text != null) element.textContent = text;
-  return element;
-}
 
 const game = {
   id: 'danse-de-vampyr',
@@ -312,7 +307,7 @@ const game = {
     if (this.withinWindow(positionWithinBeat)) {
       this.steps += 1;
       this.streak += 1;
-      this.ctx.message(`${this.steps} step${this.steps === 1 ? '' : 's'} in time.`);
+      this.ctx.message(`${this.steps} ${plural(this.steps, 'step')} in time.`);
     } else {
       this.streak = 0;
       this.flawless = false;
@@ -388,7 +383,7 @@ const game = {
     this.stateLabel.textContent = 'The host has seen you';
     this.hint.textContent = `You moved during the hold. Multiplier back to \u00d71; danse ${this.danseNumber + 1} begins shortly.`;
     this.ctx.setActionEnabled(false);
-    this.ctx.message(`You moved. ${lost} step${lost === 1 ? '' : 's'} lost, and the host resets your multiplier to \u00d71.`);
+    this.ctx.message(`You moved. ${lost} ${plural(lost, 'step')} lost, and the host resets your multiplier to \u00d71.`);
 
     this.paint();
     this.settle();
