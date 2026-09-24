@@ -10,7 +10,7 @@ const BEAT_MS = 1050;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const LOCATIONS = [
-  { id: 'skiff', name: 'Skiff', x: 50, y: 88 },
+  { id: 'drifter', name: 'Drifter', x: 50, y: 88 },
   { id: 'lantern', name: 'Lantern', x: 18, y: 68 },
   { id: 'chapel', name: 'Chapel', x: 78, y: 69 },
   { id: 'iron-choir', name: 'Iron Choir', x: 12, y: 43 },
@@ -278,14 +278,18 @@ const game = {
     this.routeLines.forEach(({ line, riskTag, pair }) => {
       const route = currentRoutes.get(routeKey(pair.from, pair.to));
       const isOpen = route && (route.from === this.position || route.to === this.position);
-      line.hidden = !route;
+      // SVG elements ignore the `hidden` IDL property, so lanes that do not exist
+      // in this chart are hidden with a class instead. Otherwise every possible
+      // pair of locations draws a line.
+      line.classList.toggle('graveyard__route--hidden', !route);
       riskTag.hidden = !isOpen;
       if (!route) return;
       line.classList.toggle('graveyard__route--open', isOpen);
       const currentCost = route.risk + this.cargoStrain();
-      line.classList.toggle('graveyard__route--rough', currentCost >= 3);
+      // Only a lane you can actually take is coloured. Everything else stays chart furniture.
+      line.classList.toggle('graveyard__route--rough', Boolean(isOpen) && currentCost >= 3);
       riskTag.textContent = String(currentCost);
-      riskTag.classList.toggle('graveyard__route-risk--rough', currentCost >= 3);
+      riskTag.classList.toggle('graveyard__route-risk--rough', Boolean(isOpen) && currentCost >= 3);
     });
 
     this.cargoValue.textContent = String(this.cargo);

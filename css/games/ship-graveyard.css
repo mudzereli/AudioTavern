@@ -134,16 +134,21 @@
 }
 
 .graveyard__route {
-  stroke: #536b6a;
-  stroke-width: 0.55;
-  stroke-dasharray: 1.4 1.2;
-  opacity: 0.55;
+  stroke: #3c5155;
+  stroke-width: 0.5;
+  stroke-dasharray: 0.9 1.8;
+  opacity: 0.3;
   transition: stroke 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
 }
 
+/* A lane that does not exist on this chart is not drawn at all. */
+.graveyard__route--hidden { display: none; }
+
+/* Only lanes leaving the current position read as passable. */
 .graveyard__route--open {
   stroke: #85bab1;
   stroke-width: 0.95;
+  stroke-dasharray: none;
   opacity: 0.95;
 }
 
