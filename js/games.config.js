@@ -46,7 +46,7 @@ export const CATEGORIES = [
   {
     id: 'watch',
     title: 'The Night Watch',
-    blurb: 'Four beacons. One keeper. Keep the signal alive.',
+    blurb: 'Night work. Keep the signal, hold the measure, judge the knock.',
   },
   {
     id: 'at-sea',
@@ -237,6 +237,23 @@ export const GAMES = [
     track: {
       title: 'Danse de Vampyr',
       audioUrl: 'https://sounds.tabletopaudio.com/508_Danse_de_Vampyr.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'all-hallows-eve',
+    title: "All Hallows' Eve",
+    tagline: 'Judge the knock',
+    category: 'watch',
+    accent: '#c9bda3',
+    scoreLabel: 'souls judged',
+    rules:
+      'Someone is at the door. Read the six signs through the glass — shadow, breath, knocks, hounds, lantern, gate. The living break none of them; the dead break exactly one. Offer the living a soul cake, bar the door on the dead, and judge before the knocking stops. A wrong judgement, or none at all, ends the night — what you have earned is kept.',
+    // The two judgements are the actions; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: "All Hallows' Eve",
+      audioUrl: 'https://sounds.tabletopaudio.com/230_All_Hallows_Eve.mp3',
       soundUrl: SOUND_HOME,
     },
   },

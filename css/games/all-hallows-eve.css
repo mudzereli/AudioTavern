@@ -1,0 +1,475 @@
+/* all-hallows-eve.css — the door, the ledger, and the knock.
+
+   The scene is the only place the palette warms up: pumpkin lamp light behind a
+   frosted pane, ash and bone everywhere else, and --accent kept for the readout.
+   Nothing in the scene is styled by what the visitor turns out to be. */
+
+.hallows {
+  width: min(560px, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+}
+
+/* The door ----------------------------------------------------------------- */
+
+.hallows__door {
+  position: relative;
+  width: 100%;
+  height: 168px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, #14100f, #0d0a09 62%);
+  isolation: isolate;
+}
+
+/* The knock. Live, it shakes the frame twice; under reduced motion the animation
+   is discarded and the ring alone carries the cue. */
+.hallows__door--knocked {
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.hallows__door--knocked .hallows__frame {
+  animation: hallows-knock 260ms ease-in-out 2;
+}
+
+.hallows__door--lost {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 45%, transparent);
+}
+
+.hallows__door--lost .hallows__lane {
+  filter: brightness(0.55) saturate(0.8);
+}
+
+.hallows__door--dawn .hallows__lane {
+  filter: brightness(2.1) saturate(0.55);
+}
+
+.hallows__door--dawn .hallows__glass {
+  background: radial-gradient(70% 60% at 50% 42%, rgb(206 202 196 / 0.5), rgb(70 66 70 / 0.5) 60%, rgb(18 16 18 / 0.9));
+}
+
+.hallows__lane {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 92% at 52% -30%, rgb(214 150 84 / 0.16), transparent 62%),
+    linear-gradient(180deg, #1b1512, #100c0b 70%, #090706);
+}
+
+.hallows__hedge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34px;
+  background:
+    radial-gradient(58% 100% at 8% 100%, #161d16 0%, transparent 62%),
+    radial-gradient(50% 100% at 30% 100%, #131a13 0%, transparent 62%),
+    radial-gradient(56% 100% at 58% 100%, #161d16 0%, transparent 62%),
+    radial-gradient(62% 100% at 86% 100%, #121812 0%, transparent 64%),
+    linear-gradient(180deg, transparent, #0a0d09);
+}
+
+.hallows__fog {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 18px;
+  height: 46px;
+  background: repeating-linear-gradient(180deg, rgb(190 178 158 / 0.07) 0 6px, transparent 6px 17px);
+  filter: blur(3px);
+}
+
+.hallows__frame {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  translate: -50% 0;
+  width: 128px;
+  height: 132px;
+  display: grid;
+  place-items: end center;
+  border: 1px solid #3a2c26;
+  border-bottom: none;
+  border-radius: 64px 64px 0 0;
+  background: linear-gradient(180deg, #241a16, #170f0d);
+  box-shadow: inset 0 0 34px rgb(0 0 0 / 0.75);
+}
+
+.hallows__lamp {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  translate: -50% 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 212 150 / 0.55), rgb(255 186 110 / 0.12) 52%, transparent 72%);
+}
+
+.hallows__glass {
+  position: relative;
+  width: 92px;
+  height: 104px;
+  display: grid;
+  place-items: end center;
+  overflow: hidden;
+  border-radius: 46px 46px 0 0;
+  background: radial-gradient(72% 62% at 50% 42%, rgb(232 176 104 / 0.34), rgb(60 40 28 / 0.5) 58%, rgb(14 10 9 / 0.9));
+}
+
+/* The frost sits above the visitor, so the shape is never a face. */
+.hallows__frost {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(115deg, rgb(228 216 196 / 0.05) 0 3px, transparent 3px 11px),
+    radial-gradient(80% 70% at 50% 60%, transparent 40%, rgb(10 8 8 / 0.5));
+}
+
+.hallows__visitor {
+  position: relative;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  opacity: 0;
+  filter: blur(1.2px);
+}
+
+.hallows__visitor-head {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0e0b0a;
+}
+
+.hallows__visitor-body {
+  width: 46px;
+  height: 62px;
+  margin-top: -4px;
+  border-radius: 23px 23px 0 0;
+  background: #0e0b0a;
+}
+
+.hallows__visitor--arriving {
+  animation: hallows-step-in 520ms ease-out both;
+}
+
+.hallows__visitor--gone {
+  animation: hallows-step-out 420ms ease-in both;
+}
+
+.hallows__visitor--inside {
+  animation: hallows-step-close 900ms ease-in both;
+}
+
+@keyframes hallows-knock {
+  0%, 100% { translate: -50% 0; }
+  30% { translate: -50% 2px; }
+  70% { translate: -50% -2px; }
+}
+
+@keyframes hallows-step-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hallows-step-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes hallows-step-close {
+  from { opacity: 1; scale: 1; }
+  to { opacity: 1; scale: 2.2; }
+}
+
+/* Readouts ----------------------------------------------------------------- */
+
+.hallows__stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.hallows__stat {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+}
+
+.hallows__stat-label {
+  font-family: var(--font-num);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.hallows__stat-value {
+  font-family: var(--font-num);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ledger ---------------------------------------------------------------
+   Six rows, always, in the same order. The only thing that ever changes is the
+   wording of a value, and the wording is styled the same whichever it says. */
+
+.hallows__ledger {
+  width: 100%;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgb(28 22 19 / 0.92), rgb(18 14 13 / 0.92));
+}
+
+.hallows__sign {
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr) 1.6rem;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.hallows__sign-key {
+  color: var(--ink-2);
+}
+
+.hallows__sign-value {
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.hallows__sign-mark {
+  justify-self: end;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  rotate: 45deg;
+  border-radius: 1px;
+  background: var(--accent-line);
+}
+
+/* A quiet row can never be the anomaly, so it is dimmed enough to skip. Only
+   the reporting rows need reading, and every one of those reads alike. */
+.hallows__sign--quiet {
+  opacity: 0.7;
+}
+
+.hallows__sign--quiet .hallows__sign-key {
+  color: var(--ink-3);
+}
+
+.hallows__sign--quiet .hallows__sign-value {
+  color: var(--ink-3);
+}
+
+.hallows__sign--quiet .hallows__sign-mark {
+  background: var(--line);
+}
+
+.hallows__sign--tell {
+  border-color: color-mix(in srgb, var(--bad) 42%, transparent);
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+}
+
+.hallows__sign--tell .hallows__sign-value {
+  color: var(--ink);
+}
+
+/* The window --------------------------------------------------------------- */
+
+.hallows__meter {
+  width: 100%;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.hallows__meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hallows__meter-label {
+  font-family: var(--font-num);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hallows__meter-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.hallows__meter-fill {
+  display: block;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 50%, #2a2119), var(--accent));
+}
+
+/* While the read is free the bar is held, not counting, and says so in grey. */
+.hallows__meter-track--reading .hallows__meter-fill {
+  background: linear-gradient(90deg, #332d28, #55504a);
+}
+
+.hallows__meter-track--low .hallows__meter-fill {
+  background: var(--bad);
+}
+
+/* The judgements ----------------------------------------------------------- */
+
+.hallows__choices {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.hallows__choices .btn {
+  width: 100%;
+}
+
+/* Each judgement names who it is for, right where the decision is made. The
+   sublabel is quiet and never coloured: barring is correct, not a warning. */
+.hallows__choice {
+  display: grid;
+  gap: 0.1rem;
+  justify-items: center;
+}
+
+.hallows__choice-for {
+  font-family: var(--font-num);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.hallows__hint {
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* The lore ----------------------------------------------------------------- */
+
+.hallows__lore {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: rgb(21 18 17 / 0.72);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.hallows__lore-summary {
+  cursor: pointer;
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hallows__lore-list {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.hallows__lore-item {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.hallows__lore-spirit {
+  color: var(--ink-2);
+}
+
+.hallows__lore-tell {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+}
+
+.hallows__lore-note {
+  margin-top: 0.6rem;
+  color: var(--ink-2);
+}
+
+/* States ------------------------------------------------------------------- */
+
+.hallows--lost .hallows__ledger {
+  opacity: 0.72;
+}
+
+.hallows--stopped .hallows__choices,
+.hallows--stopped .hallows__hint {
+  opacity: 0.55;
+}
+
+@media (max-width: 440px) {
+  .hallows__door {
+    height: 146px;
+  }
+
+  .hallows__sign {
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+  }
+
+  .hallows__sign-mark {
+    display: none;
+  }
+
+  .hallows__choices {
+    grid-template-columns: 1fr;
+  }
+
+  .hallows__lore-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hallows__door--knocked .hallows__frame,
+  .hallows__visitor--arriving,
+  .hallows__visitor--gone,
+  .hallows__visitor--inside {
+    animation: none;
+  }
+
+  /* The states still have to read without their animations. */
+  .hallows__visitor--arriving {
+    opacity: 1;
+  }
+
+  .hallows__visitor--gone {
+    opacity: 0;
+  }
+
+  .hallows__visitor--inside {
+    opacity: 1;
+  }
+}

@@ -45,6 +45,9 @@ folder to any static host — no compilation, no dependencies.
 | Assassin's Bazaar | Visual deduction | Read the broker's clue, then find the matching hood and carried item in the crowd. | Assassin's Bazaar |
 | The Last Watcher | Signal memory | Watch four beacons flash a sequence, then repeat it. | The Last Watcher |
 | Escape the Hold | Maze | Navigate safe cargo passages to the open hatch; backtracking is allowed. | Slave Ship Hold |
+| Ship Graveyard | Salvage | Load cargo from the wrecks and get it back to the skiff before the storm. | Ship Graveyard |
+| Danse de Vampyr | Rhythm | Step on the beat, and hold perfectly still when the measure resolves. | Danse de Vampyr |
+| All Hallows' Eve | Judgement | Read the six signs at the door; the dead break exactly one of them. | All Hallows' Eve |
 
 Tables are grouped on the hub by category, defined in `CATEGORIES` in the same file. There are
 five so far — **The Tavern**, **The Wilds**, **The Markets**, **The Night Watch**, and **At Sea** —
