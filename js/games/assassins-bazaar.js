@@ -7,6 +7,7 @@
    identifies exactly one person.
    --------------------------------------------------------------------------- */
 
+import { plural } from '../dom.js';
 import { shuffle } from '../rng.js';
 
 const HOODS = [
@@ -268,7 +269,7 @@ const game = {
       if (milestone) earned.push(`the streak pays ${milestone} more`);
       const aside = earned.length ? ` — ${earned.join(', ')}` : '';
       ctx.message(
-        `Correct in ${recognitionMs} ms${aside}: ${marks} mark${marks === 1 ? '' : 's'}. Streak ${this.streak}.`,
+        `Correct in ${recognitionMs} ms${aside}: ${marks} ${plural(marks, 'mark')}. Streak ${this.streak}.`,
       );
     } else {
       const target = this.people[this.targetIndex];
