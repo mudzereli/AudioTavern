@@ -5,15 +5,9 @@
    appears, grouped under its category, with its accent and its best score.
    --------------------------------------------------------------------------- */
 
+import { el, plural } from './dom.js';
 import { CATEGORIES, gamesInCategory } from './games.config.js';
 import { getBest, getRuns } from './store.js';
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text != null) node.textContent = text;
-  return node;
-}
 
 const root = document.querySelector('[data-hub]');
 
@@ -68,7 +62,7 @@ for (const category of CATEGORIES) {
 
     if (best > 0) {
       meta.append(el('span', 'table__best', `Best ${best} ${game.scoreLabel}`));
-      meta.append(el('span', 'table__fresh', `${runs} run${runs === 1 ? '' : 's'}`));
+      meta.append(el('span', 'table__fresh', `${runs} ${plural(runs, 'run')}`));
     } else {
       meta.append(el('span', 'table__fresh', 'Never played'));
     }

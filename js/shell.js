@@ -21,18 +21,12 @@
      ctx.setActionEnabled(b) enable or disable it
    --------------------------------------------------------------------------- */
 
+import { el } from './dom.js';
 import { RUN_MS, createRun, formatClock } from './run.js';
 import { createRng, randomSeed } from './rng.js';
 import { addRun, clearProgress, getBest, getProgress, saveProgress, submitScore } from './store.js';
 
 const LOW_TIME_MS = 60_000;
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text != null) node.textContent = text;
-  return node;
-}
 
 export function mountShell(config, game) {
   const root = document.querySelector('[data-shell]');
