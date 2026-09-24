@@ -1,0 +1,220 @@
+/* ---------------------------------------------------------------------------
+   magical-flora.css — the grove.
+
+   A rail of seed chips over a 7x7 bed. Every plane carries its own colour and
+   its own silhouette, and each plot also holds its letter, so the bed can be
+   read without relying on colour alone. A bloom keeps the face it grew with and
+   takes a gold ring, because what a plot was and what it now reads as are two
+   different facts.
+
+   All state here is a static colour, border or ring change. Nothing pulses:
+   tokens.css neutralises animation and transition under prefers-reduced-motion,
+   so no cue may depend on motion.
+   --------------------------------------------------------------------------- */
+
+.grove {
+  /* The wild colour: a Mistflower seed, and the ring on anything that blooms. */
+  --wild: #e3cf8a;
+
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+}
+
+/* The rail ----------------------------------------------------------------- */
+
+.grove__rail {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.grove__seeds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.grove__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.grove__chip:hover:not(:disabled) {
+  border-color: var(--accent-line);
+}
+
+.grove__chip:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.grove__chip--selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.grove__chip-count {
+  font-family: var(--font-num);
+  color: var(--ink-3);
+}
+
+.grove__chip--selected .grove__chip-count {
+  color: var(--ink);
+}
+
+.grove__swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  background: var(--plane, var(--ink-3));
+  border-radius: 50%;
+}
+
+/* One silhouette and colour a plane, used by the swatch and the planted plot. */
+.grove__chip[data-plane="verdant"] { --plane: #6fbf6a; }
+.grove__chip[data-plane="ember"] { --plane: #e07a45; }
+.grove__chip[data-plane="tide"] { --plane: #5aa7d6; }
+.grove__chip[data-plane="gloam"] { --plane: #9a7ad0; }
+.grove__chip[data-plane="aether"] { --plane: #6fd0c0; }
+.grove__chip[data-plane="wild"] { --plane: var(--wild); }
+
+.grove__compost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  font-size: 0.8rem;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease;
+}
+
+.grove__compost:hover:not(:disabled) {
+  border-color: var(--bad);
+  color: var(--ink);
+}
+
+.grove__compost:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.grove__compost-count {
+  font-family: var(--font-num);
+  color: var(--ink-3);
+}
+
+/* The bed ------------------------------------------------------------------ */
+
+.grove__board {
+  width: min(430px, 100%);
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 7), minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.grove__plot {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font: inherit;
+  font-family: var(--font-num);
+  font-size: 0.92rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel-2) 55%, var(--bg));
+  color: var(--ink-3);
+  cursor: default;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+
+.grove__plot--legal {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  cursor: pointer;
+}
+
+.grove__plot--legal:hover {
+  border-color: var(--accent);
+}
+
+.grove__plot--legal:active {
+  transform: translateY(1px);
+}
+
+/* Planted plots: a plane colour and a silhouette. */
+
+.grove__plot[data-plane] {
+  border-color: transparent;
+  color: #14100a;
+}
+
+.grove__plot[data-plane="verdant"] { background: #6fbf6a; border-radius: 50%; }
+.grove__plot[data-plane="ember"] { background: #e07a45; border-radius: 32% 50% 32% 50%; }
+.grove__plot[data-plane="tide"] { background: #5aa7d6; border-radius: 50% 50% 12% 12%; }
+.grove__plot[data-plane="gloam"] { background: #9a7ad0; border-radius: 12%; }
+.grove__plot[data-plane="aether"] { background: #6fd0c0; border-radius: 50% 12% 50% 12%; }
+.grove__plot[data-plane="wild"] { background: var(--wild); border-radius: 50%; }
+
+/* A bloom keeps the face it grew with, so the ring has to carry the wild reading
+   on its own. Gold rather than the table accent: the accent here is #7cc36a,
+   which would disappear into a verdant plot's #6fbf6a fill. */
+.grove__plot--bloom {
+  box-shadow:
+    0 0 0 2px var(--wild),
+    0 0 16px -4px color-mix(in srgb, var(--wild) 55%, transparent);
+}
+
+.grove--maturing .grove__plot {
+  opacity: 0.7;
+}
+
+/* The foot ----------------------------------------------------------------- */
+
+.grove__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1rem;
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.grove__season {
+  color: var(--accent);
+}
+
+.grove--lastcall .grove__season {
+  color: var(--bad);
+}
+
+.grove__hint {
+  max-width: 48ch;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
