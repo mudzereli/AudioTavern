@@ -1,0 +1,318 @@
+.danse {
+  width: min(520px, 100%);
+  margin-inline: auto;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+
+.danse__readout {
+  width: min(500px, 100%);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.danse__stat {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.danse__label {
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.danse__value {
+  color: var(--accent);
+  font-family: var(--font-num);
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.danse__stat-value {
+  color: var(--ink-2);
+  font-family: var(--font-num);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ballroom ------------------------------------------------------------- */
+
+.danse__hall {
+  position: relative;
+  width: min(500px, 100%);
+  min-height: 17rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 1.05rem;
+  padding: 1.2rem 1.2rem 5.6rem;
+  overflow: hidden;
+  border: 1px solid #4a2b33;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(ellipse 58% 40% at 50% 0%, rgb(226 150 96 / 0.17), transparent 72%),
+    linear-gradient(180deg, #1b1013 0%, #150c0f 46%, #0e0709 100%);
+  transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Mirrored arches across the back wall. */
+.danse__arches {
+  position: absolute;
+  inset: 0 0 44% 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.danse__arch {
+  flex: 1 1 0;
+  max-width: 6.2rem;
+  height: 74%;
+  border: 1px solid rgb(124 74 82 / 0.45);
+  border-bottom: none;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, rgb(74 36 44 / 0.5), rgb(22 12 15 / 0.2));
+}
+
+/* The chandelier is the beat: a ring closes on it and lands as you step. */
+.danse__metronome {
+  position: relative;
+  width: 7.2rem;
+  height: 7.2rem;
+  display: grid;
+  place-items: center;
+}
+
+.danse__chandelier {
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 1px solid #6b3a40;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, rgb(255 214 170 / 0.16), transparent 68%);
+  transition: box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.danse__chandelier--lit {
+  background: radial-gradient(circle at 50% 42%, rgb(255 205 150 / 0.34), transparent 70%);
+  box-shadow: 0 0 52px rgb(255 190 130 / 0.22), inset 0 0 26px rgb(255 190 130 / 0.18);
+}
+
+/* The target. The beat ring lands exactly here, and both flash together. */
+.danse__target {
+  position: absolute;
+  inset: 1.08rem;
+  border: 2px solid #6b3a40;
+  border-radius: 50%;
+  opacity: 0.55;
+  transition: opacity 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.danse--beat .danse__target {
+  border-color: #e9c07a;
+  opacity: 1;
+  box-shadow: 0 0 24px rgb(233 192 122 / 0.45), inset 0 0 20px rgb(233 192 122 / 0.28);
+}
+
+/* The chandelier flares with the same flash. */
+.danse--beat .danse__chandelier {
+  background: radial-gradient(circle at 50% 42%, rgb(255 214 170 / 0.5), transparent 72%);
+  box-shadow: 0 0 64px rgb(255 196 132 / 0.34), inset 0 0 30px rgb(255 196 132 / 0.26);
+}
+
+/* The beat ring. Its scale is driven from JS: one inward contraction per beat,
+   sitting on the target for the whole flash. */
+.danse__approach {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(206 150 120 / 0.55);
+  border-radius: 50%;
+  transform: scale(1);
+}
+
+/* The parquet, tilted away from the eye. */
+.danse__floor {
+  position: absolute;
+  left: -22%;
+  right: -22%;
+  bottom: -8%;
+  height: 66%;
+  transform: perspective(320px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.05) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 30px),
+    linear-gradient(180deg, #2b1820, #171014);
+  pointer-events: none;
+}
+
+/* A row of guests, mid-waltz. They change pose on every beat, so a beat that
+   never lands is obvious. */
+.danse__dancers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1.4rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.05rem;
+  pointer-events: none;
+}
+
+.danse__dancer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 0.95rem;
+  transform-origin: 50% 100%;
+  transition: transform 0.16s ease;
+}
+
+.danse__dancers--step .danse__dancer { transform: translateY(-0.3rem) rotate(-7deg); }
+.danse__dancers--step .danse__dancer:nth-child(even) { transform: translateY(0.12rem) rotate(8deg); }
+
+.danse__dancer-head {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid #5b323a;
+  border-radius: 50%;
+  background: #2c181e;
+}
+
+.danse__dancer-body {
+  width: 0.8rem;
+  height: 1.6rem;
+  margin-top: 0.12rem;
+  border: 1px solid #5b323a;
+  border-radius: 42% 42% 24% 24%;
+  background: linear-gradient(180deg, #331c23, #1c1013);
+}
+
+.danse__state {
+  margin: 0;
+  color: #d5b6b6;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.65);
+}
+
+.danse__host {
+  position: absolute;
+  right: 8%;
+  bottom: 1.5rem;
+  width: 2.9rem;
+  height: 3.8rem;
+  border: 1px solid #5a2f36;
+  border-radius: 46% 46% 32% 32%;
+  background: linear-gradient(180deg, #2d161b, #14090c);
+  opacity: 0.55;
+  transition: opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.danse__host-eye {
+  position: absolute;
+  top: 25%;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: #b8494f;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.danse__host-eye:first-child { left: 33%; }
+.danse__host-eye:last-child { left: 55%; }
+
+/* States ------------------------------------------------------------------- */
+
+.danse--hold .danse__hall {
+  border-color: #8a3a44;
+  background:
+    radial-gradient(ellipse 58% 40% at 50% 0%, rgb(126 42 50 / 0.2), transparent 72%),
+    linear-gradient(180deg, #150c0f 0%, #100809 52%, #080405 100%);
+  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.5);
+}
+
+.danse--hold .danse__state { color: #f4d6d6; }
+.danse--hold .danse__floor { filter: brightness(0.62); }
+.danse--hold .danse__chandelier { box-shadow: none; }
+.danse--hold .danse__chandelier--lit { box-shadow: none; }
+
+.danse--hold .danse__host {
+  opacity: 1;
+  border-color: #8a3a44;
+}
+
+.danse--hold .danse__host-eye {
+  background: #ffd9a0;
+  box-shadow: 0 0 18px rgb(255 217 160 / 0.85);
+}
+
+/* The one beat of warning before the measure resolves. */
+.danse--tell .danse__hall { border-color: #b07a3f; }
+.danse--tell .danse__state { color: #e7c897; }
+
+.danse--survived .danse__hall {
+  border-color: #6f9d7c;
+  box-shadow: inset 0 0 0 2px rgb(111 157 124 / 0.2);
+}
+
+.danse--caught .danse__hall {
+  border-color: var(--bad);
+  box-shadow: inset 0 0 0 2px rgb(216 103 95 / 0.32);
+}
+
+.danse--caught .danse__host { opacity: 1; }
+
+.danse--stopped .danse__host { opacity: 0.3; }
+.danse--stopped .danse__chandelier { box-shadow: none; background: none; }
+
+.danse__hint {
+  min-height: 2.2rem;
+  display: grid;
+  align-items: center;
+  color: var(--ink-3);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+/* The shell's bar lives inside the ballroom, sized to match the floor. */
+.danse .bar { width: min(320px, 100%); }
+
+@media (max-width: 460px) {
+  .danse__readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .danse__value { font-size: 1.4rem; }
+  .danse__hall { min-height: 14.5rem; padding: 1rem 0.9rem 4.9rem; }
+  .danse__metronome { width: 6.2rem; height: 6.2rem; }
+  .danse__target { inset: 0.93rem; }
+  .danse__dancers { gap: 0.68rem; bottom: 1.2rem; }
+  .danse__host { right: 5%; }
+}
+
+/* The beat cue is driven from JS, so there is nothing to soften here beyond
+   the state transitions. With motion reduced the flash carries the beat on its
+   own and the closing ring is dropped. */
+@media (prefers-reduced-motion: reduce) {
+  .danse__hall,
+  .danse__chandelier,
+  .danse__floor,
+  .danse__dancer,
+  .danse__host,
+  .danse__host-eye,
+  .danse__target {
+    transition: none;
+  }
+
+  .danse__approach { display: none; }
+}

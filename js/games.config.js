@@ -196,9 +196,9 @@ export const GAMES = [
     tagline: 'Find the open hatch',
     category: 'at-sea',
     accent: '#bd8c5b',
-    scoreLabel: 'spaces explored',
+    scoreLabel: 'points',
     rules:
-      'Find the open hatch. A pursuer starts after your first move and gets 10% faster after each escape.',
+      'Find the open hatch. Escapes pay more the longer you last: 1 point for the first, then 2, then 3, and so on. Being caught starts the count again, and the pursuer gets 10% faster after every escape.',
     // The adjacent passage tiles are the controls.
     actionLabel: null,
     track: {
@@ -221,6 +221,22 @@ export const GAMES = [
     track: {
       title: 'Ship Graveyard',
       audioUrl: 'https://sounds.tabletopaudio.com/523_Ship_Graveyard.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'danse-de-vampyr',
+    title: 'Danse de Vampyr',
+    tagline: 'Dance, then freeze',
+    category: 'watch',
+    accent: '#a83b47',
+    scoreLabel: 'grace earned',
+    rules:
+      'Step in time while the orchestra plays: steps on the beat earn grace, clumsy steps break your streak without ending the danse. When the measure resolves the hall holds perfectly still, and a single step then is noticed by the host. Survive to bank your grace; a danse with no missteps raises your multiplier, which quickens the music, and being caught resets it to \u00d71 and slows the measure back down. When the music stops, so will your heart.',
+    actionLabel: 'Step',
+    track: {
+      title: 'Danse de Vampyr',
+      audioUrl: 'https://sounds.tabletopaudio.com/508_Danse_de_Vampyr.mp3',
       soundUrl: SOUND_HOME,
     },
   },
