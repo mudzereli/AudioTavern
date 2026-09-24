@@ -29,12 +29,21 @@ const GOODS = [
   { name: 'a bottle', icon: 'M10 4h4v4l2 2v10H8V10l2-2V4Zm0 3h4m-6 6h12' },
   { name: 'a flower', icon: 'M12 11c-4-5 2-8 2-3 4-5 7 1 1 3 6 2 2 7-2 2 0 7-6 5-2 0-5 4-8-2-2-3-6-1-4-7 1-3 1-6 7-6 3Zm0 3v8m0-4-3-2m3 4 3-2' },
   { name: 'a key', icon: 'M14 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-1 3 7 7-2 2-2-2-2 2-2-2 2-2-3-3' },
-  { name: 'a fan', icon: 'M12 12 4 8a9 9 0 0 1 16 0l-8 4Zm0 0-7-1m7 1-5 3m5-3v7m0-7 5 3m-5-3 7-1' },
+  // Was a fan, but a lens with ribs radiating from a point reads as a flower at
+  // 25px. A crier's bell has a silhouette nothing else in the set shares.
+  { name: 'a bell', icon: 'M7 16a5 5 0 0 1 10 0v2H7v-2ZM5 18h14M10 18a2 2 0 0 0 4 0M12 11V9M10.4 7.4a1.6 1.6 0 1 1 3.2 0 1.6 1.6 0 1 1-3.2 0' },
   { name: 'a map', icon: 'm4 6 5-2 6 2 5-2v14l-5 2-6-2-5 2V6Zm5-2v14m6-12v14m-4-7 2-2 2 1' },
 ];
 
 const CROWD_SIZE = 9;
 const BEAT_MS = 850;
+
+/** Scoring. Nothing is ever taken away: a wrong pick costs only the momentum you
+    had built, so speed is a reward rather than a deadline. */
+const BASE_MARKS = 1;
+const QUICK_MS = 4000;
+const QUICK_MARKS = 1;
+const STREAK_EVERY = 4;
 
 function makeCrowd(rng) {
   const combinations = [];
@@ -92,6 +101,17 @@ const game = {
 
     const record = document.createElement('div');
     record.className = 'bazaar__record';
+
+    const streakStat = document.createElement('div');
+    streakStat.className = 'bazaar__stat';
+    const streakLabel = document.createElement('span');
+    streakLabel.className = 'bazaar__record-label';
+    streakLabel.textContent = 'Clean streak';
+    this.streakEl = document.createElement('strong');
+    this.streakEl.className = 'bazaar__streak-value';
+    this.streakEl.textContent = '0';
+    streakStat.append(streakLabel, this.streakEl);
+
     const currentPick = document.createElement('div');
     currentPick.className = 'bazaar__stat';
     const currentPickLabel = document.createElement('span');
@@ -110,11 +130,11 @@ const game = {
     fastestPick.className = 'bazaar__stat';
     const fastestLabel = document.createElement('span');
     fastestLabel.className = 'bazaar__record-label';
-    fastestLabel.textContent = 'Fastest correct this run';
+    fastestLabel.textContent = 'Fastest this run';
     this.fastestEl = document.createElement('strong');
     this.fastestEl.className = 'bazaar__record-value';
     fastestPick.append(fastestLabel, this.fastestEl);
-    record.append(currentPick, fastestPick);
+    record.append(streakStat, currentPick, fastestPick);
 
     wrap.append(wanted, this.crowd, record);
     ctx.stage.append(wrap);
@@ -130,7 +150,9 @@ const game = {
   start(ctx) {
     this.alive = true;
     this.fastestTime = null;
+    this.streak = 0;
     this.fastestEl.textContent = this.fastestTime === null ? '—' : `${this.fastestTime} ms`;
+    this.paintStreak();
     this.currentPickStatusEl.textContent = '—';
     this.currentPickTimeEl.textContent = '';
     this.currentPickStatusEl.classList.remove('bazaar__record-value--correct', 'bazaar__record-value--incorrect');
@@ -199,6 +221,14 @@ const game = {
     ctx.message('Pick the person who matches the broker’s description.');
   },
 
+  /** Momentum is the only thing a miss can take, so it is the headline readout. */
+  paintStreak() {
+    if (!this.streakEl) return;
+    const streak = this.streak ?? 0;
+    this.streakEl.textContent = String(streak);
+    this.streakEl.classList.toggle('bazaar__streak-value--hot', streak >= STREAK_EVERY);
+  },
+
   choose(index) {
     if (this.locked || !this.alive) return;
     this.locked = true;
@@ -206,8 +236,9 @@ const game = {
     const ctx = this.ctx;
     const recognitionMs = Math.round(performance.now() - this.roundStartedAt);
     const isCorrect = index === this.targetIndex;
+    const quick = isCorrect && recognitionMs <= QUICK_MS;
     this.currentPickStatusEl.textContent = isCorrect ? 'Correct' : 'Incorrect';
-    this.currentPickTimeEl.textContent = `${recognitionMs} ms`;
+    this.currentPickTimeEl.textContent = quick ? `${recognitionMs} ms · quick` : `${recognitionMs} ms`;
     this.currentPickStatusEl.classList.toggle('bazaar__record-value--correct', isCorrect);
     this.currentPickStatusEl.classList.toggle('bazaar__record-value--incorrect', !isCorrect);
 
@@ -220,15 +251,34 @@ const game = {
     if (isCorrect) buttons[index].classList.add('bazaar__person--correct');
 
     if (isCorrect) {
-      ctx.addPoints(1);
+      this.streak += 1;
+      // The streak pays at every fourth clean read, and pays more each time.
+      const milestone = this.streak % STREAK_EVERY === 0 ? this.streak / STREAK_EVERY : 0;
+      const marks = BASE_MARKS + (quick ? QUICK_MARKS : 0) + milestone;
+      ctx.addPoints(marks);
+      this.paintStreak();
+
       if (this.fastestTime === null || recognitionMs < this.fastestTime) {
         this.fastestTime = recognitionMs;
         this.fastestEl.textContent = `${recognitionMs} ms`;
       }
-      ctx.message(`Correct pick in ${recognitionMs} ms. The mark disappears into the crowd.`);
+
+      const earned = [];
+      if (quick) earned.push('quick read');
+      if (milestone) earned.push(`the streak pays ${milestone} more`);
+      const aside = earned.length ? ` — ${earned.join(', ')}` : '';
+      ctx.message(
+        `Correct in ${recognitionMs} ms${aside}: ${marks} mark${marks === 1 ? '' : 's'}. Streak ${this.streak}.`,
+      );
     } else {
       const target = this.people[this.targetIndex];
-      ctx.message(`Incorrect pick in ${recognitionMs} ms. The mark wore a ${target.hood.name} hood and carried ${target.good.name}.`);
+      const lost = this.streak;
+      this.streak = 0;
+      this.paintStreak();
+      ctx.message(
+        `Incorrect pick in ${recognitionMs} ms. The mark wore a ${target.hood.name} hood and carried ${target.good.name}. `
+        + (lost > 0 ? `Streak ended at ${lost}.` : 'No streak to lose.'),
+      );
     }
 
     clearTimeout(this.beat);

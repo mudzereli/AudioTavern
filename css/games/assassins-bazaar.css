@@ -3,10 +3,14 @@
 .bazaar__clue { margin-top: 0.3rem; color: var(--ink-2); font-size: 0.94rem; }
 .bazaar__clue strong { color: var(--ink); }
 .bazaar__crowd { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; }
-.bazaar__record { width: min(420px, 100%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--line); }
+.bazaar__record { width: min(420px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--line); }
 .bazaar__stat { min-width: 0; display: grid; justify-items: center; gap: 0.2rem; text-align: center; }
 .bazaar__record-label { font-size: 0.78rem; color: var(--ink-2); text-align: center; }
 .bazaar__record-value { font-family: var(--font-num); font-size: 1.4rem; color: var(--accent); }
+/* The streak is quiet until it is worth something, then it is the loudest thing
+   in the row: the only warning a miss ever gets. */
+.bazaar__streak-value { font-family: var(--font-num); font-size: 1.4rem; color: var(--ink-2); }
+.bazaar__streak-value--hot { color: var(--accent); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent); }
 .bazaar__last-pick { display: grid; justify-items: center; gap: 0.1rem; }
 .bazaar__last-pick-time { font-family: var(--font-num); font-size: 0.92rem; color: var(--ink-2); }
 .bazaar__record-value--correct { color: var(--accent); }
@@ -31,11 +35,77 @@
 .bazaar__person:active:not(:disabled) { transform: translateY(0); }
 .bazaar__person:disabled { cursor: default; }
 .bazaar__figure { position: relative; width: 66px; height: 64px; display: block; }
-.bazaar__shoulders { position: absolute; left: 8px; bottom: 0; width: 50px; height: 27px; border-radius: 24px 24px 7px 7px; background: color-mix(in srgb, var(--hood-color) 55%, #171311); }
-.bazaar__hood { position: absolute; z-index: 1; top: 1px; left: 14px; width: 38px; height: 42px; border: 2px solid color-mix(in srgb, var(--hood-color) 82%, white); border-radius: 21px 21px 12px 12px; background: var(--hood-color); clip-path: polygon(50% 0, 100% 28%, 91% 100%, 9% 100%, 0 28%); }
-.bazaar__face { position: absolute; z-index: 2; top: 16px; left: 23px; width: 20px; height: 23px; border-radius: 45% 45% 48% 48%; background: #c79c79; }
-.bazaar__good { position: absolute; z-index: 3; right: 0; bottom: 3px; width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--accent); font-size: 0.95rem; }
-.bazaar__good svg { display: block; width: 22px; height: 22px; }
+
+/* The garment is stacked in three shades of one colour — cloak, cowl flare,
+   hood — so the head sits inside cloth instead of on top of a cut-out. */
+.bazaar__shoulders {
+  position: absolute;
+  z-index: 0;
+  left: 6px;
+  bottom: 1px;
+  width: 54px;
+  height: 27px;
+  border-radius: 26px 26px 9px 9px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hood-color) 64%, #171311), color-mix(in srgb, var(--hood-color) 36%, #0e0b0a));
+  box-shadow: inset 0 3px 6px -3px rgb(0 0 0 / 0.5);
+}
+
+/* The cowl widening over the shoulders. Wider than the hood, so the flare shows
+   either side of it and the whole shape bells outwards instead of being a box. */
+.bazaar__figure::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 5px;
+  top: 30px;
+  width: 56px;
+  height: 22px;
+  border-radius: 24px 24px 12px 12px / 12px 12px 9px 9px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hood-color) 72%, #000), color-mix(in srgb, var(--hood-color) 42%, #0d0a09));
+}
+
+/* The hood. Two ellipse axes give a domed crown over a jaw that is only starting
+   to flare, which is what makes it read as cloth: no straight sides, no corners
+   to count. The border stays close to the hood colour — it is only a lit edge,
+   and the colour is the whole clue. */
+.bazaar__hood {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 10px;
+  width: 46px;
+  height: 52px;
+  border: 2px solid color-mix(in srgb, var(--hood-color) 76%, white);
+  border-radius: 23px 23px 11px 11px / 33px 33px 8px 8px;
+  background:
+    /* the void inside the cowl, deep enough to swallow the brow */
+    radial-gradient(56% 40% at 50% 56%, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.38) 54%, transparent 78%),
+    /* light gathered on the crown, kept shallow so a black hood still reads black */
+    radial-gradient(100% 55% at 50% 2%, color-mix(in srgb, var(--hood-color) 78%, white) 0%, transparent 58%),
+    var(--hood-color);
+  box-shadow:
+    0 3px 7px -4px rgb(0 0 0 / 0.9),
+    inset 0 -5px 9px -7px rgb(0 0 0 / 0.85);
+}
+
+/* The face, set back in that void. Its own brow shadow finishes the job. */
+.bazaar__face {
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  left: 24px;
+  width: 18px;
+  height: 25px;
+  border-radius: 46% 46% 42% 42% / 38% 38% 62% 62%;
+  background: linear-gradient(180deg, #8d6c50, #c79c79 36%, #b18768);
+  box-shadow:
+    inset 0 8px 7px -5px rgb(0 0 0 / 0.9),
+    inset 0 -4px 6px -4px rgb(0 0 0 / 0.5);
+}
+/* The carried item is half the clue, so the badge is sized to be read at a
+   glance rather than squinted at. */
+.bazaar__good { position: absolute; z-index: 3; right: 0; bottom: 0; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--accent); font-size: 0.95rem; }
+.bazaar__good svg { display: block; width: 25px; height: 25px; }
 .bazaar__number { position: absolute; left: 0.45rem; bottom: 0.25rem; font-family: var(--font-num); font-size: 0.62rem; color: var(--ink-3); }
 .bazaar__person--mark { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .bazaar__person--miss { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }

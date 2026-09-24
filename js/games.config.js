@@ -164,7 +164,7 @@ export const GAMES = [
     accent: '#c47743',
     scoreLabel: 'marks found',
     rules:
-      'Read the broker’s description, then pick the matching figure from the crowd. One clean choice, a new mark.',
+      'Read the broker’s description, then pick the matching figure from the crowd. A read inside four seconds pays double, and every fourth clean read in a row the broker pays a bonus on top. A wrong pick costs nothing but the streak.',
     // The crowd itself is the control; the shell action bar stays hidden.
     actionLabel: null,
     track: {
