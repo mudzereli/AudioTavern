@@ -23,7 +23,7 @@
 
 import { RUN_MS, createRun, formatClock } from './run.js';
 import { createRng, randomSeed } from './rng.js';
-import { addRun, getBest, submitScore } from './store.js';
+import { addRun, clearProgress, getBest, getProgress, saveProgress, submitScore } from './store.js';
 
 const LOW_TIME_MS = 60_000;
 
@@ -69,6 +69,18 @@ export function mountShell(config, game) {
   trackAudio.src = config.track.audioUrl;
   trackAudio.setAttribute('aria-label', `${config.track.title} by Tabletop Audio`);
 
+  let pendingTrackPosition = null;
+  function applyTrackPosition() {
+    if (pendingTrackPosition === null || !Number.isFinite(trackAudio.duration)) return;
+    trackAudio.currentTime = Math.min(pendingTrackPosition, trackAudio.duration);
+    pendingTrackPosition = null;
+  }
+  function seekTrack(seconds) {
+    pendingTrackPosition = Math.max(0, seconds);
+    applyTrackPosition();
+  }
+  trackAudio.addEventListener('loadedmetadata', applyTrackPosition);
+
   const soundbar = el('section', 'soundbar');
   soundbar.append(trackAudio);
 
@@ -112,6 +124,11 @@ export function mountShell(config, game) {
   const hud = el('div', 'hud');
   hud.append(clock, scores);
 
+  const savedProgress = getProgress(config.id);
+  const resumableProgress = savedProgress && savedProgress.remainingMs <= RUN_MS
+    ? savedProgress
+    : null;
+
   /* ------------------------------------------------------------ the table */
 
   const stage = el('div', 'stage');
@@ -130,18 +147,29 @@ export function mountShell(config, game) {
 
   /* ------------------------------------------------------------------- run */
 
+  let lastProgressSaveAt = 0;
   const run = createRun({
-    onTick({ remainingMs, durationMs, score }) {
+    onTick({ state, remainingMs, durationMs, score }) {
       clockTime.textContent = formatClock(remainingMs);
       clockFill.style.transform = `scaleX(${durationMs > 0 ? remainingMs / durationMs : 0})`;
       clock.classList.toggle('clock--low', remainingMs <= LOW_TIME_MS);
       scoreNum.textContent = String(score);
       bestNum.textContent = String(Math.max(storedBest, score));
+      if (state === 'paused') persistProgress(true);
+      else if (state === 'running') persistProgress();
     },
     onEnd({ score }) {
       finishRun(score);
     },
   });
+
+  function persistProgress(force = false) {
+    if (run.state !== 'running' && run.state !== 'paused') return;
+    const now = Date.now();
+    if (!force && now - lastProgressSaveAt < 2000) return;
+    saveProgress(config.id, { score: run.score, remainingMs: run.remainingMs });
+    lastProgressSaveAt = now;
+  }
 
   const ctx = {
     config,
@@ -154,6 +182,7 @@ export function mountShell(config, game) {
     },
     addPoints(points) {
       run.addPoints(points);
+      persistProgress(true);
     },
     setActionLabel(text) {
       actionBtn.textContent = text;
@@ -183,28 +212,53 @@ export function mountShell(config, game) {
     track.append(el('strong', null, config.track.title));
     track.append(document.createTextNode(' on Tabletop Audio'));
     panel.append(track);
-    panel.append(
-      el(
+    panel.append(el(
+      'p',
+      'panel__hint',
+      'A ten-minute run. Choose whether to play the track.',
+    ));
+
+    const trackPreference = el('label', 'panel__pref');
+    const playTrack = document.createElement('input');
+    playTrack.type = 'checkbox';
+    playTrack.checked = true;
+    trackPreference.append(playTrack, document.createTextNode('Play the track'));
+    panel.append(trackPreference);
+
+    if (resumableProgress) {
+      panel.append(el(
+        'p',
+        'panel__best',
+        `Saved run: ${resumableProgress.score} ${config.scoreLabel}, ${formatClock(resumableProgress.remainingMs)} remaining.`,
+      ));
+      panel.append(el(
         'p',
         'panel__hint',
-        'Ten minutes. Find that track on their page, press play, then start.',
-      ),
-    );
+        'Resuming restores score and time; the game starts a fresh round.',
+      ));
+      panel.append(el('p', 'panel__hint', 'Or start a new run.'));
+    }
 
     if (storedBest > 0) {
       panel.append(el('p', 'panel__best', `Your best: ${storedBest} ${config.scoreLabel}`));
     }
 
-    const startWithSound = el('button', 'btn btn--primary', 'Start run & play track');
-    startWithSound.type = 'button';
-    startWithSound.addEventListener('click', () => beginRun(true));
-
-    const startQuiet = el('button', 'btn btn--ghost', 'Start without track');
-    startQuiet.type = 'button';
-    startQuiet.addEventListener('click', () => beginRun(false));
-
     const actions = el('div', 'panel__actions');
-    actions.append(startWithSound, startQuiet);
+    if (resumableProgress) {
+      const resume = el('button', 'btn btn--primary', 'Resume saved run');
+      resume.type = 'button';
+      resume.addEventListener('click', () => resumeRun(playTrack.checked));
+
+      const startFresh = el('button', 'btn btn--ghost', 'Start new run');
+      startFresh.type = 'button';
+      startFresh.addEventListener('click', () => beginRun(playTrack.checked));
+      actions.append(resume, startFresh);
+    } else {
+      const start = el('button', 'btn btn--primary', 'Start run');
+      start.type = 'button';
+      start.addEventListener('click', () => beginRun(playTrack.checked));
+      actions.append(start);
+    }
     panel.append(actions);
 
     showOverlay(panel);
@@ -240,33 +294,48 @@ export function mountShell(config, game) {
 
   let runWithAudio = false;
 
-  function beginRun(withAudio = runWithAudio) {
+  function prepareRun(withAudio, trackPosition = 0) {
     overlay.hidden = true;
     overlay.replaceChildren();
 
     runWithAudio = withAudio;
+    seekTrack(trackPosition);
     if (runWithAudio) {
-      if (trackAudio.currentTime > 0) trackAudio.currentTime = 0;
       trackAudio.play().catch(() => {
         message.textContent = 'Track playback was blocked. Use the player controls to try again.';
       });
     } else {
       trackAudio.pause();
-      if (trackAudio.currentTime > 0) trackAudio.currentTime = 0;
     }
+  }
+
+  function beginRun(withAudio = runWithAudio) {
+    prepareRun(withAudio);
 
     // A fresh generator per run, so no two nights are the same.
     ctx.rng = createRng(randomSeed());
 
     ctx.message('');
+    clearProgress(config.id);
+    lastProgressSaveAt = 0;
     run.reset();
     run.start();
+    if (game.start) game.start(ctx);
+  }
+
+  function resumeRun(withAudio) {
+    const elapsedSeconds = (RUN_MS - resumableProgress.remainingMs) / 1000;
+    prepareRun(withAudio, elapsedSeconds);
+    ctx.message('');
+    ctx.rng = createRng(randomSeed());
+    run.resume();
     if (game.start) game.start(ctx);
   }
 
   function finishRun(score) {
     if (game.stop) game.stop(ctx);
     trackAudio.pause();
+    clearProgress(config.id);
 
     actionBtn.disabled = true;
 
@@ -310,26 +379,19 @@ export function mountShell(config, game) {
     actionBar.hidden = true;
   }
 
-  let resumeAudioOnVisible = false;
-
-  // Keep the soundtrack aligned with the paused game clock.
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      resumeAudioOnVisible = run.state === 'running' && !trackAudio.paused;
-      run.pause();
-      trackAudio.pause();
-    } else {
-      run.resume();
-      if (resumeAudioOnVisible) {
-        trackAudio.play().catch(() => {});
-        resumeAudioOnVisible = false;
-      }
-    }
-  });
-
   /* ------------------------------------------------------------------ boot */
 
   if (game.mount) game.mount(ctx);
-  run.reset();
+  if (resumableProgress) run.restore(resumableProgress);
+  else run.reset();
   showIdle();
+
+  window.addEventListener('pagehide', () => {
+    if (run.state === 'running') run.pause();
+    persistProgress(true);
+  });
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted && run.state === 'paused') run.resume();
+  });
 }

@@ -11,7 +11,7 @@
 
 import { renderDice, roll, subsetsSummingTo, sum } from '../dice.js';
 
-const TILES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const TILES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 /** Pause between rounds, long enough to read what happened. */
 const BEAT_MS = 1100;

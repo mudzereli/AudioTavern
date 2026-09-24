@@ -97,7 +97,7 @@ export const GAMES = [
     accent: '#55935f',
     scoreLabel: 'points banked',
     rules:
-      'Roll to build a total, but a one wipes the whole round. Bank before your nerve fails you.',
+      'Roll to build a total, but a one wipes the round. Every 100 banked points earns a stackable reroll. Reroll a shown die, but a one still busts.',
     actionLabel: 'Roll',
     track: {
       title: 'Viking Tavern',
@@ -130,7 +130,7 @@ export const GAMES = [
     accent: '#9a6fc4',
     scoreLabel: 'points',
     rules:
-      'Call one of the six symbols, then roll three dice. Every die that lands on your symbol pays, and all three pay properly.',
+      'Roll five symbol dice, then choose one of the symbols that landed to collect its pot. You may reroll one die before collecting, but the dice are final afterward. Unclaimed pots grow each round; five matching dice earn a full-table bonus.',
     // The six symbol buttons are the action.
     actionLabel: null,
     track: {
@@ -204,6 +204,23 @@ export const GAMES = [
     track: {
       title: 'Slave Ship Hold',
       audioUrl: 'https://sounds.tabletopaudio.com/520_Slave_Ship_Hold.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'ship-graveyard',
+    title: 'Ship Graveyard',
+    tagline: 'Salvage and escape',
+    category: 'at-sea',
+    accent: '#71b9b2',
+    scoreLabel: 'salvage extracted',
+    rules:
+      'Each expedition starts from a different skiff on a shifting sea chart. Strong salvage signals mean bigger caches. At each wreck, choose a quick haul of up to 2 cargo for 1 base strain, or strip the whole wreck for 3 base strain. Cargo adds strain to every action. Deliver to the skiff before the storm breaks; only delivered salvage scores.',
+    // The chart, Search, and Return controls are the actions; no shell button is needed.
+    actionLabel: null,
+    track: {
+      title: 'Ship Graveyard',
+      audioUrl: 'https://sounds.tabletopaudio.com/523_Ship_Graveyard.mp3',
       soundUrl: SOUND_HOME,
     },
   },

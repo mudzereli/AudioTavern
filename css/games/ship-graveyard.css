@@ -1,0 +1,287 @@
+.graveyard {
+  width: min(560px, 100%);
+  margin-inline: auto;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+
+.graveyard__status {
+  width: min(520px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(70px, 0.55fr) minmax(0, 1.35fr);
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.graveyard__expedition {
+  min-width: 6.5rem;
+  min-height: 3.25rem;
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+}
+
+.graveyard__expedition-value {
+  color: #d9c58f;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.graveyard__expedition--delivered .graveyard__expedition-value { color: #93c6a9; }
+.graveyard__expedition--lost .graveyard__expedition-value { color: #df8275; }
+
+.graveyard__cargo {
+  min-height: 3.25rem;
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+}
+
+.graveyard__label {
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.graveyard__value {
+  color: var(--accent);
+  font-family: var(--font-num);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.graveyard__storm {
+  min-width: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.graveyard__storm-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.graveyard__storm-value {
+  color: #d77d70;
+  font-family: var(--font-num);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.graveyard__meter {
+  height: 0.6rem;
+  overflow: hidden;
+  border: 1px solid #40565a;
+  background: #162024;
+}
+
+.graveyard__meter-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: #71b9b2;
+  transition: transform 0.24s ease, background 0.24s ease;
+}
+
+.graveyard__meter--high .graveyard__meter-fill {
+  background: #d77d70;
+}
+
+.graveyard__chart {
+  position: relative;
+  isolation: isolate;
+  width: min(520px, 100%);
+  aspect-ratio: 1.22;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 46%, rgb(83 124 125 / 0.22), transparent 66%),
+    repeating-linear-gradient(168deg, transparent 0 21px, rgb(114 157 157 / 0.055) 22px 23px, transparent 24px 42px),
+    #101b20;
+  border-block: 1px solid #385157;
+}
+
+.graveyard__chart::before,
+.graveyard__chart::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 50%;
+  height: 34%;
+  border: 1px solid rgb(143 165 126 / 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.graveyard__chart::before { left: -20%; top: 18%; transform: rotate(-24deg); }
+.graveyard__chart::after { right: -20%; bottom: 8%; transform: rotate(20deg); }
+
+.graveyard__routes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.graveyard__route {
+  stroke: #536b6a;
+  stroke-width: 0.55;
+  stroke-dasharray: 1.4 1.2;
+  opacity: 0.55;
+  transition: stroke 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+.graveyard__route--open {
+  stroke: #85bab1;
+  stroke-width: 0.95;
+  opacity: 0.95;
+}
+
+.graveyard__route--rough { stroke: #ad7364; }
+
+.graveyard__route-risk {
+  position: absolute;
+  z-index: 1;
+  width: 1.3rem;
+  height: 1.3rem;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid #597374;
+  border-radius: 50%;
+  background: #142126;
+  color: #d5d8c7;
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.graveyard__route-risk--rough {
+  border-color: #ad7364;
+  color: #e5a18b;
+}
+
+.graveyard__route-risk[hidden] { display: none; }
+
+.graveyard__node {
+  position: absolute;
+  z-index: 2;
+  width: 4.6rem;
+  min-height: 3.5rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.16rem;
+  padding: 0.25rem;
+  transform: translate(-50%, -50%);
+  border: 1px solid #6c8179;
+  border-radius: 50%;
+  background: #253337;
+  color: #e0ddd0;
+  cursor: default;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
+}
+
+.graveyard__node:disabled { opacity: 1; }
+.graveyard__node--skiff { border-color: #8bb9a5; background: #203b39; }
+.graveyard__node--searched { border-style: dashed; color: #8e9e99; }
+.graveyard__node--current { box-shadow: 0 0 0 3px rgb(240 225 179 / 0.5), 0 0 24px rgb(240 225 179 / 0.25); }
+
+.graveyard__node--available:not(:disabled) {
+  border-color: #91d0c4;
+  background: #294d4c;
+  cursor: pointer;
+}
+
+.graveyard__node--available:not(:disabled):hover {
+  background: #35625e;
+  box-shadow: 0 0 0 3px rgb(145 208 196 / 0.2);
+}
+
+.graveyard__node--rough:not(:disabled) { border-color: #d38b76; }
+.graveyard__node--strong:not(:disabled) { box-shadow: inset 0 0 0 2px rgb(224 181 105 / 0.4); }
+
+.graveyard__node-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.graveyard__node-marker {
+  color: #a7c0b5;
+  font-family: var(--font-num);
+  font-size: 0.48rem;
+  text-transform: uppercase;
+}
+
+.graveyard__node--skiff .graveyard__node-marker { color: #aad5bd; }
+.graveyard__node--searched .graveyard__node-marker { color: #c6977d; }
+.graveyard__node--strong .graveyard__node-marker { color: #edc277; }
+
+.graveyard__quick:not(:disabled) {
+  border-color: #719d83;
+  color: #b9d4bd;
+}
+
+.graveyard__strip:not(:disabled) {
+  border-color: #a97b54;
+  color: #e0b273;
+}
+
+.graveyard__expedition--delivered {
+  padding-inline: 0.5rem;
+  border-left: 2px solid #79ae89;
+  background: rgb(81 127 90 / 0.12);
+}
+
+.graveyard__expedition--lost {
+  padding-inline: 0.5rem;
+  border-left: 2px solid #c56e68;
+  background: rgb(154 67 67 / 0.12);
+}
+
+.graveyard__actions {
+  width: min(520px, 100%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.graveyard__hint {
+  min-height: 2.4rem;
+  display: grid;
+  align-items: center;
+  color: var(--ink-3);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .graveyard__status {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr);
+    gap: 0.55rem;
+  }
+
+  .graveyard__expedition { grid-column: 1 / -1; min-height: 2rem; }
+  .graveyard__expedition-value { font-size: 0.72rem; }
+
+  .graveyard__chart { aspect-ratio: 1.04; }
+  .graveyard__node { width: 3.8rem; min-height: 3.15rem; }
+  .graveyard__node-name { font-size: 0.65rem; }
+  .graveyard__node-marker { font-size: 0.42rem; }
+}

@@ -1,4 +1,4 @@
-.watcher { width: min(440px, 100%); display: grid; gap: 1rem; justify-items: center; }
+.watcher { width: min(440px, 100%); margin-inline: auto; display: grid; gap: 1rem; justify-items: center; }
 .watcher__progress { min-height: 1.4rem; font-family: var(--font-num); font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .watcher__board { width: min(340px, 100%); aspect-ratio: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
 

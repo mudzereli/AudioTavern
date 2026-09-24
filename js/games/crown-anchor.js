@@ -1,9 +1,8 @@
 /* ---------------------------------------------------------------------------
-   Crown & Anchor — call your symbol.
+  Crown & Anchor — collect your pot.
 
-   A real game from real taverns: six symbols on the table, three symbol dice,
-   and one call. Every die that lands on your symbol pays, and all three at once
-   pays properly.
+  Roll five symbol dice, optionally reroll one, then collect a symbol that
+  landed. Each unclaimed symbol's pot grows, making every roll a new decision.
 
    The whole round is a single click, so the shell's action bar stays hidden and
    the symbol buttons are the game.
@@ -20,15 +19,19 @@ const SYMBOLS = [
   { id: 'club', glyph: '\u2663', name: 'club' },
 ];
 
-const MATCH_POINTS = 3;
 const SWEEP_BONUS = 10;
+const START_POT = 3;
+const POT_GROWTH = 2;
+const DICE_COUNT = 5;
 const BEAT_MS = 1000;
 
-function renderSymbolDie(symbol, isHit) {
-  const die = document.createElement('span');
+function renderSymbolDie(symbol, isHit, onReroll) {
+  const die = document.createElement('button');
+  die.type = 'button';
   die.className = `die die--symbol${isHit ? ' die--hit' : ''}`;
-  die.setAttribute('role', 'img');
-  die.setAttribute('aria-label', symbol.name);
+  die.disabled = !onReroll;
+  die.setAttribute('aria-label', onReroll ? `${symbol.name}, reroll this die` : symbol.name);
+  if (onReroll) die.addEventListener('click', onReroll);
 
   const glyph = document.createElement('span');
   glyph.className = 'die__glyph';
@@ -52,27 +55,34 @@ const game = {
 
     const prompt = document.createElement('p');
     prompt.className = 'cap';
-    prompt.textContent = 'call a symbol';
+    prompt.textContent = 'choose a symbol from the roll';
 
     this.symbolsEl = document.createElement('div');
     this.symbolsEl.className = 'ca__symbols';
+    this.potEls = [];
 
     this.symbolButtons = SYMBOLS.map((symbol, index) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ca__symbol';
-      button.textContent = symbol.glyph;
+      const glyph = document.createElement('span');
+      glyph.className = 'ca__symbol-glyph';
+      glyph.textContent = symbol.glyph;
+      const pot = document.createElement('span');
+      pot.className = 'ca__symbol-pot';
+      button.append(glyph, pot);
       button.setAttribute('aria-label', symbol.name);
       button.title = symbol.name;
       button.addEventListener('click', () => this.call(index));
       this.symbolsEl.append(button);
+      this.potEls.push(pot);
       return button;
     });
 
     wrap.append(this.diceEl, prompt, this.symbolsEl);
     ctx.stage.append(wrap);
 
-    // 1-6 call the matching symbol.
+    // 1-6 collect the pot for a symbol shown on the dice.
     document.addEventListener('keydown', (event) => {
       const slot = Number(event.key);
       if (!Number.isInteger(slot) || slot < 1 || slot > SYMBOLS.length) return;
@@ -83,6 +93,7 @@ const game = {
 
   start(ctx) {
     this.alive = true;
+    this.pots = SYMBOLS.map(() => START_POT);
     this.newRound(ctx);
   },
 
@@ -96,41 +107,75 @@ const game = {
 
   newRound(ctx) {
     this.locked = false;
-    this.diceEl.replaceChildren();
-    for (const button of this.symbolButtons) button.disabled = false;
+    this.landed = roll(ctx.rng, DICE_COUNT, 6).map((face) => SYMBOLS[face - 1]);
+    this.landedCounts = SYMBOLS.map((symbol) => this.landed.filter((face) => face.id === symbol.id).length);
+    this.rerollsRemaining = 1;
+    this.renderDice(true);
+    this.updatePots();
 
-    ctx.message('Call a symbol. Every die that matches pays.');
+    ctx.message('Collect a shown symbol, or click one die to reroll it once.');
+  },
+
+  renderDice(canReroll, selectedSymbolId = null) {
+    this.diceEl.replaceChildren(...this.landed.map((symbol, index) => renderSymbolDie(
+      symbol,
+      symbol.id === selectedSymbolId,
+      canReroll ? () => this.rerollDie(index) : null,
+    )));
+  },
+
+  rerollDie(index) {
+    if (this.locked || !this.alive || this.rerollsRemaining === 0) return;
+
+    this.rerollsRemaining = 0;
+    this.landed[index] = SYMBOLS[Math.floor(this.ctx.rng() * SYMBOLS.length)];
+    this.landedCounts = SYMBOLS.map((symbol) => this.landed.filter((face) => face.id === symbol.id).length);
+    this.renderDice(false);
+    this.updatePots();
+    this.ctx.message('Reroll used. Choose one of the symbols shown to collect its pot.');
+  },
+
+  updatePots() {
+    this.pots.forEach((pot, index) => {
+      const hits = this.landedCounts?.[index] || 0;
+      const points = hits * pot + (hits === DICE_COUNT ? SWEEP_BONUS : 0);
+      this.potEls[index].textContent = hits ? `${points} pts` : `${pot} pot`;
+      this.symbolButtons[index].setAttribute('aria-label', hits
+        ? `${SYMBOLS[index].name}, ${hits} dice, collect ${points} points`
+        : `${SYMBOLS[index].name}, pot ${pot} points, not rolled`);
+      this.symbolButtons[index].title = hits
+        ? `${SYMBOLS[index].name}: ${hits} dice, collect ${points} points`
+        : `${SYMBOLS[index].name}: ${pot}-point pot, not rolled`;
+      this.symbolButtons[index].disabled = this.locked || hits === 0;
+    });
   },
 
   /* ---------------------------------------------------------------- action */
 
   call(index) {
-    if (this.locked || !this.alive) return;
+    if (this.locked || !this.alive || this.landedCounts[index] === 0) return;
 
     const ctx = this.ctx;
     const called = SYMBOLS[index];
+    const pot = this.pots[index];
+    const hits = this.landedCounts[index];
 
     this.locked = true;
-    for (const button of this.symbolButtons) button.disabled = true;
+    this.renderDice(false, called.id);
+    this.updatePots();
 
-    const faces = roll(ctx.rng, 3, 6);
-    const landed = faces.map((face) => SYMBOLS[face - 1]);
-    const hits = landed.filter((symbol) => symbol.id === called.id).length;
+    let points = hits * pot;
+    if (hits === DICE_COUNT) points += SWEEP_BONUS;
+    ctx.addPoints(points);
+    this.pots = this.pots.map((currentPot, potIndex) => potIndex === index ? START_POT : currentPot + POT_GROWTH);
+    this.updatePots();
 
-    this.diceEl.replaceChildren(...landed.map((symbol) => renderSymbolDie(symbol, symbol.id === called.id)));
-
-    let points = hits * MATCH_POINTS;
-    if (hits === SYMBOLS.length) points += SWEEP_BONUS;
-    if (points > 0) ctx.addPoints(points);
-
-    if (hits === 3) {
-      ctx.message(`Three ${called.name}s — ${points} points.`);
-    } else if (hits === 2) {
-      ctx.message(`Two ${called.name}s — ${points} points.`);
-    } else if (hits === 1) {
-      ctx.message(`One ${called.name} — ${points} points.`);
+    if (hits === DICE_COUNT) {
+      ctx.message(`All five ${called.name}s — collected ${points} points, including the full-table bonus.`);
+    } else if (hits > 1) {
+      ctx.message(`${hits} ${called.name}s — collected ${points} points at ${pot} per die.`);
     } else {
-      ctx.message(`No ${called.name}s.`);
+      ctx.message(`One ${called.name} — collected ${points} points. Unclaimed pots grow by ${POT_GROWTH}.`);
     }
 
     clearTimeout(this.beat);

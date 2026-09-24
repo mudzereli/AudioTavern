@@ -4,5 +4,16 @@
   justify-items: center;
 }
 
+.pig__dice-slot {
+  min-height: 3.5rem;
+  display: grid;
+  place-items: center;
+}
+
 .pig__total { font-family: var(--font-num); font-size: 2.6rem; color: var(--accent); }
-.pig__actions { display: flex; gap: 0.6rem; }
+.pig__tokens { min-height: 2.75rem; display: flex; align-items: center; gap: 0.6rem; color: var(--ink-2); }
+.pig__tokens strong { font-family: var(--font-num); font-size: 1.2rem; color: var(--accent); }
+.pig__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.pig .bar { width: min(320px, 100%); }
+
+.pig__tokens [hidden] { display: none; }

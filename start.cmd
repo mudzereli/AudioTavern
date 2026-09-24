@@ -34,11 +34,18 @@ if errorlevel 1 (
 powershell -NoProfile -Command "if (Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue) { exit 1 }"
 if errorlevel 1 (
     echo.
-    echo   Port %PORT% already has a server. No browser tab was opened.
-    echo   Stop the existing server before starting another one.
+    echo   Port %PORT% already has a server.
+    choice /C YN /N /M "Stop it and restart the server? [Y/N] "
+    if errorlevel 2 exit /b 0
+    powershell -NoProfile -Command "$connections = Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue; if (-not $connections) { exit 1 }; $connections.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force }"
+    if errorlevel 1 (
+        echo.
+        echo   Could not stop the server on port %PORT%.
+        pause
+        exit /b 1
+    )
+    echo   Existing server stopped. Starting a fresh one...
     echo.
-    pause
-    exit /b 1
 )
 
 echo.

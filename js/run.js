@@ -134,6 +134,23 @@ export function createRun({ durationMs = RUN_MS, onTick, onEnd } = {}) {
       emit();
     },
 
+    /** Restore score and time without starting the countdown. */
+    restore(snapshot) {
+      if (state !== 'idle' || !snapshot) return;
+      if (!Number.isFinite(snapshot.score) || snapshot.score < 0) return;
+      if (!Number.isFinite(snapshot.remainingMs) || snapshot.remainingMs <= 0) return;
+      score = snapshot.score;
+      remainingMs = Math.min(snapshot.remainingMs, durationMs);
+      emit();
+    },
+
+    /** Resume a restored idle run without resetting its score or time. */
+    resume() {
+      if (state !== 'idle') return;
+      state = 'running';
+      begin();
+    },
+
     addPoints(points) {
       if (!Number.isFinite(points) || points === 0) return;
       score += points;

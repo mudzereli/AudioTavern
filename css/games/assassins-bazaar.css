@@ -1,8 +1,16 @@
-.bazaar { width: min(520px, 100%); display: grid; gap: 1rem; justify-items: center; }
+.bazaar { width: min(520px, 100%); margin-inline: auto; display: grid; gap: 1rem; justify-items: center; }
 .bazaar__wanted { width: 100%; padding: 0.8rem 1rem; border-left: 3px solid var(--accent); background: var(--accent-soft); text-align: center; }
 .bazaar__clue { margin-top: 0.3rem; color: var(--ink-2); font-size: 0.94rem; }
 .bazaar__clue strong { color: var(--ink); }
 .bazaar__crowd { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; }
+.bazaar__record { width: min(420px, 100%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--line); }
+.bazaar__stat { min-width: 0; display: grid; justify-items: center; gap: 0.2rem; text-align: center; }
+.bazaar__record-label { font-size: 0.78rem; color: var(--ink-2); text-align: center; }
+.bazaar__record-value { font-family: var(--font-num); font-size: 1.4rem; color: var(--accent); }
+.bazaar__last-pick { display: grid; justify-items: center; gap: 0.1rem; }
+.bazaar__last-pick-time { font-family: var(--font-num); font-size: 0.92rem; color: var(--ink-2); }
+.bazaar__record-value--correct { color: var(--accent); }
+.bazaar__record-value--incorrect { color: var(--bad); }
 
 .bazaar__person {
   position: relative;
@@ -27,9 +35,27 @@
 .bazaar__hood { position: absolute; z-index: 1; top: 1px; left: 14px; width: 38px; height: 42px; border: 2px solid color-mix(in srgb, var(--hood-color) 82%, white); border-radius: 21px 21px 12px 12px; background: var(--hood-color); clip-path: polygon(50% 0, 100% 28%, 91% 100%, 9% 100%, 0 28%); }
 .bazaar__face { position: absolute; z-index: 2; top: 16px; left: 23px; width: 20px; height: 23px; border-radius: 45% 45% 48% 48%; background: #c79c79; }
 .bazaar__good { position: absolute; z-index: 3; right: 0; bottom: 3px; width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--accent); font-size: 0.95rem; }
+.bazaar__good svg { display: block; width: 22px; height: 22px; }
 .bazaar__number { position: absolute; left: 0.45rem; bottom: 0.25rem; font-family: var(--font-num); font-size: 0.62rem; color: var(--ink-3); }
 .bazaar__person--mark { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .bazaar__person--miss { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.bazaar__person--correct,
+.bazaar__person--miss { animation: bazaar-pick-flash 700ms ease-out; }
+.bazaar__person--correct { --pick-flash: #69c77b; --pick-flash-bg: #254b30; }
+.bazaar__person--miss { --pick-flash: var(--bad); --pick-flash-bg: color-mix(in srgb, var(--bad) 24%, var(--panel)); }
+
+@keyframes bazaar-pick-flash {
+  0%, 45% { border-color: var(--pick-flash); background-color: var(--pick-flash-bg); box-shadow: inset 0 0 0 2px var(--pick-flash), 0 0 18px color-mix(in srgb, var(--pick-flash) 45%, transparent); }
+  100% { border-color: var(--pick-end-border); background-color: var(--pick-end-bg); box-shadow: inset 0 0 0 1px var(--pick-end-border); }
+}
+
+.bazaar__person--correct { --pick-end-border: var(--accent); --pick-end-bg: var(--accent-soft); }
+.bazaar__person--miss { --pick-end-border: var(--bad); --pick-end-bg: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bazaar__person--correct,
+  .bazaar__person--miss { animation: none; border-color: var(--pick-flash); background-color: var(--pick-flash-bg); box-shadow: inset 0 0 0 2px var(--pick-flash); }
+}
 
 @media (max-width: 440px) {
   .bazaar__crowd { gap: 0.35rem; }

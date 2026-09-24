@@ -63,3 +63,30 @@ export function addRun(gameId) {
   return next;
 }
 
+/* In-progress run --------------------------------------------------------- */
+
+export function getProgress(gameId) {
+  const value = read(`progress.${gameId}`, null);
+  if (!value || typeof value !== 'object') return null;
+  if (!Number.isFinite(value.score) || value.score < 0) return null;
+  if (!Number.isFinite(value.remainingMs) || value.remainingMs <= 0) return null;
+  return { score: value.score, remainingMs: value.remainingMs };
+}
+
+export function saveProgress(gameId, progress) {
+  if (!Number.isFinite(progress.score) || progress.score < 0) return;
+  if (!Number.isFinite(progress.remainingMs) || progress.remainingMs <= 0) return;
+  write(`progress.${gameId}`, {
+    score: progress.score,
+    remainingMs: progress.remainingMs,
+  });
+}
+
+export function clearProgress(gameId) {
+  try {
+    localStorage.removeItem(PREFIX + `progress.${gameId}`);
+  } catch {
+    /* Storage unavailable; a later valid save can replace the old value. */
+  }
+}
+
