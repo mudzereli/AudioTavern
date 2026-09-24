@@ -10,7 +10,6 @@ const COLS = 5;
 const ROWS = 5;
 const START = (ROWS - 1) * COLS + Math.floor(COLS / 2);
 const EXIT = Math.floor(COLS / 2);
-const EXIT_BONUS = 10;
 const BEAT_MS = 950;
 const CHASE_MS = 1000;
 const MIN_CHASE_MS = 0;
@@ -93,6 +92,41 @@ const game = {
     const wrap = document.createElement('div');
     wrap.className = 'hold';
 
+    const readout = document.createElement('div');
+    readout.className = 'hold__readout';
+
+    const streak = document.createElement('div');
+    streak.className = 'hold__stat';
+    const streakLabel = document.createElement('span');
+    streakLabel.className = 'hold__stat-label';
+    streakLabel.textContent = 'Escape streak';
+    this.streakValue = document.createElement('strong');
+    this.streakValue.className = 'hold__stat-value';
+    this.streakValue.textContent = '0';
+    streak.append(streakLabel, this.streakValue);
+
+    const best = document.createElement('div');
+    best.className = 'hold__stat';
+    const bestLabel = document.createElement('span');
+    bestLabel.className = 'hold__stat-label';
+    bestLabel.textContent = 'Best streak';
+    this.bestValue = document.createElement('strong');
+    this.bestValue.className = 'hold__stat-value hold__stat-value--quiet';
+    this.bestValue.textContent = '0';
+    best.append(bestLabel, this.bestValue);
+
+    const pursuit = document.createElement('div');
+    pursuit.className = 'hold__stat';
+    const pursuitLabel = document.createElement('span');
+    pursuitLabel.className = 'hold__stat-label';
+    pursuitLabel.textContent = 'Pursuer';
+    this.pursuitValue = document.createElement('strong');
+    this.pursuitValue.className = 'hold__stat-value hold__stat-value--quiet';
+    this.pursuitValue.textContent = 'normal';
+    pursuit.append(pursuitLabel, this.pursuitValue);
+
+    readout.append(streak, best, pursuit);
+
     this.board = document.createElement('div');
     this.board.className = 'hold__board';
     this.board.setAttribute('role', 'group');
@@ -108,7 +142,7 @@ const game = {
       this.cells.push(cell);
     }
 
-    wrap.append(this.board);
+    wrap.append(readout, this.board);
     ctx.stage.append(wrap);
 
     document.addEventListener('keydown', (event) => {
@@ -132,6 +166,7 @@ const game = {
   start(ctx) {
     this.alive = true;
     this.successfulEscapes = 0;
+    this.bestStreak = 0;
     this.newRound(ctx);
   },
 
@@ -157,7 +192,7 @@ const game = {
     this.pursuerPosition = START;
 
     this.paint();
-    ctx.message('Find the hatch. The pursuer starts after your first move and gets faster after each escape.');
+    ctx.message('Find the hatch. Each escape is worth one more point than the last; being caught starts the count again.');
   },
 
   paint() {
@@ -200,6 +235,18 @@ const game = {
       if (openLabels.length) labels.push(`passages ${openLabels.join(', ')}`);
       cell.setAttribute('aria-label', `Row ${Math.floor(index / COLS) + 1}, column ${index % COLS + 1}: ${labels.join('; ') || 'cargo bay'}`);
     });
+
+    this.paintStreak();
+  },
+
+  paintStreak() {
+    const streak = this.successfulEscapes ?? 0;
+    const best = Math.max(this.bestStreak ?? 0, streak);
+    const faster = Math.round((1 - 1 / ESCAPE_SPEEDUP ** streak) * 100);
+    this.streakValue.textContent = String(streak);
+    this.bestValue.textContent = String(best);
+    this.pursuitValue.textContent = faster > 0 ? `+${faster}% faster` : 'normal';
+    this.streakValue.classList.toggle('hold__stat-value--hot', streak >= 3);
   },
 
   move(destination) {
@@ -211,14 +258,17 @@ const game = {
     this.position = destination;
     const firstVisit = !this.visited.has(destination);
     this.visited.add(destination);
-    if (firstVisit) this.ctx.addPoints(1);
+    // Exploring no longer scores: the only points come from getting out.
 
     if (destination === EXIT) {
       this.locked = true;
-      this.paint();
-      this.ctx.addPoints(EXIT_BONUS);
       this.successfulEscapes += 1;
-      this.ctx.message(`Hatch found. ${this.visited.size - 1} spaces explored, plus ${EXIT_BONUS} for the escape. The pursuer will be 10% faster next round.`);
+      const record = this.successfulEscapes > (this.bestStreak ?? 0);
+      this.bestStreak = Math.max(this.bestStreak ?? 0, this.successfulEscapes);
+      // The streak is the score: the first escape is worth 1, the next 2, and so on.
+      this.ctx.addPoints(this.successfulEscapes);
+      this.paint();
+      this.ctx.message(`Hatch found. Escape streak ${this.successfulEscapes}${record ? ', best yet' : ''}, worth ${this.successfulEscapes} point${this.successfulEscapes === 1 ? '' : 's'}. The pursuer is quicker next round.`);
       this.settle();
       return;
     }
@@ -242,11 +292,14 @@ const game = {
 
     this.pursuerPosition = nextStepToward(this.pursuerPosition, this.position, this.passages);
     if (this.pursuerPosition === this.position) {
+      const streakLost = this.successfulEscapes;
       this.locked = true;
       this.successfulEscapes = 0;
       clearInterval(this.chaseTimer);
       this.paint();
-      this.ctx.message(`Caught in the hold. ${this.visited.size - 1} spaces explored. The pursuer's speed resets.`);
+      this.ctx.message(streakLost > 0
+        ? `Caught in the hold. A streak of ${streakLost} ends, so the next escape is worth 1 point again.`
+        : 'Caught in the hold. The next escape starts a new count at 1 point.');
       this.settle();
       return;
     }
