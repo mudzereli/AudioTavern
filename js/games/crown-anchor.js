@@ -81,14 +81,6 @@ const game = {
 
     wrap.append(this.diceEl, prompt, this.symbolsEl);
     ctx.stage.append(wrap);
-
-    // 1-6 collect the pot for a symbol shown on the dice.
-    document.addEventListener('keydown', (event) => {
-      const slot = Number(event.key);
-      if (!Number.isInteger(slot) || slot < 1 || slot > SYMBOLS.length) return;
-      event.preventDefault();
-      this.call(slot - 1);
-    });
   },
 
   start(ctx) {

@@ -10,7 +10,7 @@
    table, and an ace or a two simply closes the side it cannot beat.
 
    This table draws its own buttons — two calls and a bank — so the shell hides
-   its single-action bar. Left and right arrows call, B banks.
+   its single-action bar.
    --------------------------------------------------------------------------- */
 
 import { cardLabel, cardShort, createDeck, renderCard } from '../deck.js';
@@ -131,31 +131,6 @@ const game = {
 
     wrap.append(this.potPanel, pair, calls, this.bankBtn, stats);
     ctx.stage.append(wrap);
-
-    // The calls and the bank are the whole game, so bind them once and keep them.
-    document.addEventListener('keydown', (event) => {
-      if (!this.alive || event.repeat) return;
-
-      // A focused control activates on Space and Enter by itself.
-      const target = event.target;
-      const ownControl = target instanceof HTMLElement
-        ? target.closest('button, a, input, select, textarea')
-        : null;
-
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        this.call('lower');
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        this.call('higher');
-      } else if (event.key === 'b' || event.key === 'B') {
-        event.preventDefault();
-        this.bank();
-      } else if ((event.key === ' ' || event.key === 'Enter') && !ownControl) {
-        event.preventDefault();
-        this.bank();
-      }
-    });
   },
 
   start(ctx) {

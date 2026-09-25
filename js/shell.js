@@ -9,8 +9,8 @@
      mount(ctx)   build its DOM once, into ctx.stage
      start(ctx)   begin a run: reset state and start the first round
      stop(ctx)    the run is over: clear timers and disable input
-     act(ctx)     optional. The primary action, wired to its button and to
-                  Space/Enter. Omit it if the table draws its own controls.
+     act(ctx)     optional. The primary action, wired to its button. Omit it if
+                  the table draws its own controls.
 
    ctx is how a game talks back:
      ctx.rng                the run's seeded generator
@@ -347,27 +347,13 @@ export function mountShell(config, game) {
 
   /* ---------------------------------------------------------------- input */
 
+  // Mouse only. The primary action is a button and nothing else: no table on the
+  // site binds a key, so there is no document-level key handling to guard.
   if (config.actionLabel) {
     actionBtn.textContent = config.actionLabel;
     actionBtn.addEventListener('click', () => {
       if (run.state !== 'running') return;
       if (game.act) game.act(ctx);
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== ' ' && event.key !== 'Enter') return;
-
-      // If something else on the page has focus, let it handle its own
-      // activation — otherwise Space would roll the dice instead of pressing
-      // the tile or card the player is sitting on.
-      const target = event.target;
-      if (target instanceof HTMLElement) {
-        const interactive = target.closest('button, a, input, select, textarea');
-        if (interactive && interactive !== actionBtn) return;
-      }
-
-      event.preventDefault();
-      if (!actionBtn.disabled) actionBtn.click();
     });
   } else {
     actionBar.hidden = true;

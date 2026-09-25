@@ -105,7 +105,7 @@ callback re-checks `alive` and the phase.
 - `README.md` — the table row.
 
 No shared file changes: the table still fits the contract with `actionLabel: null`,
-drawing its own three buttons and binding Left, Right and B itself.
+drawing its own three buttons.
 
 ## Notes for a first play
 

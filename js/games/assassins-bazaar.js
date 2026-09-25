@@ -139,13 +139,6 @@ const game = {
 
     wrap.append(wanted, this.crowd, record);
     ctx.stage.append(wrap);
-
-    document.addEventListener('keydown', (event) => {
-      if (!this.alive || this.locked) return;
-      if (!/^[1-9]$/.test(event.key)) return;
-      event.preventDefault();
-      this.choose(Number(event.key) - 1);
-    });
   },
 
   start(ctx) {

@@ -60,13 +60,6 @@ const game = {
     wrap.append(this.progress, this.board);
     ctx.stage.append(wrap);
 
-    document.addEventListener('keydown', (event) => {
-      if (!this.alive || this.phase !== 'input') return;
-      if (!/^[1-4]$/.test(event.key)) return;
-      event.preventDefault();
-      this.answer(Number(event.key) - 1);
-    });
-
     document.addEventListener('visibilitychange', () => {
       if (!this.alive) return;
       if (document.hidden) this.pauseWatch();
@@ -113,7 +106,7 @@ const game = {
 
     this.progress.textContent = `Watch ${length} signals`;
     this.setEnabled(false);
-    ctx.message('Watch the beacons, then repeat them. Keys 1 through 4 map north, east, south, west.');
+    ctx.message('Watch the beacons, then click them back in the order they flashed.');
 
     this.playSequence(ctx);
   },

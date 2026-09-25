@@ -9,7 +9,7 @@
    the night, and what you have earned is kept.
 
    Two judgements, so this table draws its own buttons and the shell hides its
-   single-action bar. Left and right arrows work too.
+   single-action bar.
    --------------------------------------------------------------------------- */
 
 import { el } from '../dom.js';
@@ -264,11 +264,10 @@ const game = {
     this.meterTrack.classList.add('hallows__meter-track--reading');
     meter.append(meterHead, this.meterTrack);
 
-    /* The two judgements. Bar sits on the left, to match the arrow, and each one
-       says who it is for: the rules are read once, the decision is made all night. */
+    /* The two judgements. Bar sits on the left, and each one says who it is for:
+       the rules are read once, the decision is made all night. */
     this.barBtn = el('button', 'btn btn--ghost hallows__choice');
     this.barBtn.type = 'button';
-    this.barBtn.setAttribute('aria-keyshortcuts', 'ArrowLeft');
     this.barBtn.setAttribute('aria-label', 'Bar the door on the dead');
     this.barBtn.append(
       el('span', 'hallows__choice-label', 'Bar the door'),
@@ -278,7 +277,6 @@ const game = {
 
     this.offerBtn = el('button', 'btn btn--primary hallows__choice');
     this.offerBtn.type = 'button';
-    this.offerBtn.setAttribute('aria-keyshortcuts', 'ArrowRight');
     this.offerBtn.setAttribute('aria-label', 'Offer the cake to the living');
     this.offerBtn.append(
       el('span', 'hallows__choice-label', 'Offer the cake'),
@@ -326,13 +324,6 @@ const game = {
     this.paint();
     this.setChoicesEnabled(false);
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-      event.preventDefault();
-      this.judge(event.key === 'ArrowRight' ? 'offer' : 'bar');
-    });
-
-    // A hidden tab must not spend a knock window in the player's absence.
     document.addEventListener('visibilitychange', () => this.handleVisibility());
   },
 

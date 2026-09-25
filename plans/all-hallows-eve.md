@@ -105,4 +105,4 @@ restarts the clock with the remainder, so a hidden tab costs nothing.
 - `README.md` — the table row.
 
 No shared file changes: the game fits the existing contract with `actionLabel: null`,
-drawing its own two buttons and binding its own arrow keys.
+drawing its own two buttons.

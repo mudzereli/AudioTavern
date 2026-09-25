@@ -146,23 +146,6 @@ const game = {
 
     wrap.append(readout, this.board);
     ctx.stage.append(wrap);
-
-    document.addEventListener('keydown', (event) => {
-      if (!this.alive || this.locked) return;
-      const direction = {
-        ArrowUp: 'north',
-        ArrowRight: 'east',
-        ArrowDown: 'south',
-        ArrowLeft: 'west',
-      }[event.key];
-      if (!direction) return;
-
-      const destination = this.neighbour(this.position, direction);
-      if (destination === null || !this.passages[this.position].has(direction)) return;
-
-      event.preventDefault();
-      this.move(destination);
-    });
   },
 
   start(ctx) {

@@ -74,10 +74,9 @@ season pays the season number on everything.
 - **The bell harvests an unfinished season** (user's call), for the share of the
   hand that went in: `floor(seasonHarvest × season × spentRatio)`. This is the
   one place the table touches the clock.
-- **Mouse first, no hotkeys** (user's call). The rail chips, the compost and the
-  plots are all real buttons, so Tab and Enter still work; what is gone is a
-  document-level keydown handler, and with it the focus-guard hazard the repo
-  notes warn about.
+- **Mouse only** (site-wide rule since 2026-09-25). The rail chips, the compost
+  and the plots are all real buttons, so the game works with a finger as well as a
+  mouse.
 - **Letters, colours and silhouettes.** Each plot carries its plane's letter as
   well as its colour and shape, so the bed is readable without relying on colour.
 

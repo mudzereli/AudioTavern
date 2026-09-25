@@ -63,14 +63,6 @@ const game = {
 
     wrap.append(diceSlot, this.roundLabelEl, this.totalEl, this.tokensEl, actions, ctx.actionBar);
     ctx.stage.append(wrap);
-
-    // Space or Enter rolls (through the shell). B banks.
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'b' && event.key !== 'B') return;
-      if (!this.alive || this.locked || (this.round === 0 && !this.pendingBust)) return;
-      event.preventDefault();
-      this.bank();
-    });
   },
 
   start(ctx) {

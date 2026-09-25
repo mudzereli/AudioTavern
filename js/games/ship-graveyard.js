@@ -131,29 +131,9 @@ const game = {
     this.returnButton.addEventListener('click', () => this.extract());
     this.actions.append(this.quickButton, this.stripButton, this.returnButton);
 
-    this.hint = el('p', 'graveyard__hint', 'Choose a route. Numbered routes: 1–4. S: quick salvage. D: strip wreck. R: return.');
+    this.hint = el('p', 'graveyard__hint', 'Click a route on the chart to travel. At a wreck, take a quick haul or strip the whole thing, then get back to the skiff to bank it.');
     wrap.append(status, this.chart, this.actions, this.hint);
     ctx.stage.append(wrap);
-
-    document.addEventListener('keydown', (event) => {
-      if (!this.alive || this.locked) return;
-      if (/^[1-4]$/.test(event.key)) {
-        const option = this.availableLanes()[Number(event.key) - 1];
-        if (option) {
-          event.preventDefault();
-          this.travel(option.destination);
-        }
-      } else if (event.key === 's' || event.key === 'S') {
-        event.preventDefault();
-        this.search('quick');
-      } else if (event.key === 'd' || event.key === 'D') {
-        event.preventDefault();
-        this.search('strip');
-      } else if (event.key === 'r' || event.key === 'R') {
-        event.preventDefault();
-        this.extract();
-      }
-    });
   },
 
   start(ctx) {
