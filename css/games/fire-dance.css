@@ -1,0 +1,241 @@
+/* ---------------------------------------------------------------------------
+   fire-dance.css — the clearing.
+
+   One bonfire, its light, a beast on a fixed ray outside it, and the dancers.
+   The board is two numbers made geometric: the ring's radius is the fire's
+   level and the pip's distance is the beast's, on one shared scale, so "held"
+   is literally the pip sitting on the ring.
+
+   Discrete states only. tokens.css neutralises animation and transition under
+   prefers-reduced-motion, so the fire has to read as height and the light as
+   size — never as flicker.
+   --------------------------------------------------------------------------- */
+
+.fire {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+}
+
+/* The readout ------------------------------------------------------------- */
+
+.fire__readout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.fire__chip {
+  display: grid;
+  justify-items: center;
+  min-width: 4.6rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.fire__chip-label {
+  font-family: var(--font-num);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.fire__chip-value {
+  font-family: var(--font-num);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A fire this low is one turn from the dark, so it is called out in red. */
+.fire__chip--low {
+  border-color: var(--bad);
+}
+
+.fire__chip--low .fire__chip-value {
+  color: var(--bad);
+}
+
+/* Held: the light reaches it, and it can take nothing this turn. */
+.fire__chip--held {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+/* The clearing ------------------------------------------------------------ */
+
+.fire__clearing {
+  position: relative;
+  width: min(420px, 100%);
+  aspect-ratio: 1;
+  border: 1px solid var(--line-soft);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--panel-2) 85%, var(--bg)),
+    var(--bg) 72%
+  );
+  overflow: hidden;
+}
+
+/* The light. Its radius is the fire's level, set from JavaScript as --light; the
+   beast is held wherever it reaches, and that is the whole read of the table. */
+.fire__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--light, 34%) * 2);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--accent-line);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 76%
+  );
+}
+
+/* The fire itself: one tongue per level, lit from the bottom, tapering as it
+   climbs, so its height is the number without anything having to flicker. */
+.fire__flame {
+  position: absolute;
+  bottom: 21%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22%;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+}
+
+.fire__tongue {
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.fire__tongue--lit {
+  background: var(--accent);
+}
+
+.fire__tongue:nth-child(2) {
+  width: 90%;
+}
+
+.fire__tongue:nth-child(3) {
+  width: 80%;
+}
+
+.fire__tongue:nth-child(4) {
+  width: 68%;
+}
+
+.fire__tongue:nth-child(5) {
+  width: 56%;
+}
+
+.fire__tongue:nth-child(6) {
+  width: 44%;
+}
+
+/* The beast: one pip on the ray above the fire, at the ring's own scale. */
+.fire__beast {
+  position: absolute;
+  top: calc(50% - var(--out, 40%));
+  left: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--bad);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 20%, transparent);
+  transition: top 0.18s ease;
+}
+
+/* Held at the edge: it is inside the light, and the light is why it is not
+   coming any closer. That is the difference the player is playing for. */
+.fire__clearing--held .fire__beast {
+  background: var(--ink-3);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-3) 18%, transparent);
+}
+
+/* The fire is out: nothing is holding anything anywhere. */
+.fire__clearing--dark {
+  border-color: var(--bad);
+  background: color-mix(in srgb, #180d0c 70%, var(--bg));
+}
+
+/* The dancers: three silhouettes, and the only death the player ever sees. */
+.fire__dancers {
+  position: absolute;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.45rem;
+}
+
+.fire__dancer {
+  width: 0.5rem;
+  height: 0.8rem;
+  border-radius: 45% 45% 40% 40%;
+  background: var(--ink-2);
+  transition: opacity 0.2s ease;
+}
+
+.fire__dancer--lost {
+  opacity: 0.16;
+}
+
+/* What the night is doing -------------------------------------------------- */
+
+.fire__order {
+  min-height: 2.4em;
+  max-width: 50ch;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+/* The actions -------------------------------------------------------------- */
+
+.fire__bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Every button carries its net effect on the fire, because those three numbers
+   are the economy and they shift as the night deepens. */
+.fire__action {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.fire__action-name {
+  font-size: 0.86rem;
+}
+
+.fire__action-net {
+  font-family: var(--font-num);
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.fire__hint {
+  max-width: 54ch;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
