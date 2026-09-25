@@ -37,7 +37,7 @@ folder to any static host — no compilation, no dependencies.
 | Table | Game | Rule | Theme track |
 | --- | --- | --- | --- |
 | Bones | Shut the Box | Roll two dice, then shut tiles that add up to the roll. | Tavern Music |
-| Higher or Lower | Card calling | Call the next card higher or lower. A miss ends the round. | The Slaughtered Ox |
+| Higher or Lower | Card calling | Call the next card higher or lower and bank the pot before a miss takes it. | The Slaughtered Ox |
 | Pig | Roll and bank | Roll to build a total, but a one wipes it. Bank before you bust. | Viking Tavern |
 | Pairs | Memory | Turn up two cards at a time and remember what you saw. | The Hearth Inn |
 | Crown & Anchor | Symbol dice | Call a symbol, roll three dice, score every die that matches. | Tavern Celebration |
@@ -48,10 +48,13 @@ folder to any static host — no compilation, no dependencies.
 | Ship Graveyard | Salvage | Load cargo from the wrecks and get it back to the skiff before the storm. | Ship Graveyard |
 | Danse de Vampyr | Rhythm | Step on the beat, and hold perfectly still when the measure resolves. | Danse de Vampyr |
 | All Hallows' Eve | Judgement | Read the six signs at the door; the dead break exactly one of them. | All Hallows' Eve |
+| Magical Flora | Planar gardening | Plant seeds beside what is growing; another plane pays more than your own, and a ringed plot blooms into a wildcard. | Magical Flora |
+| Bug Hunt | Telegraph tactics | Hold a line of fire on it and slip the corners it cannot; bar the door it needs. One bite and the sector is over. | Bug Hunt |
+| Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
 
 Tables are grouped on the hub by category, defined in `CATEGORIES` in the same file. There are
-five so far — **The Tavern**, **The Wilds**, **The Markets**, **The Night Watch**, and **At Sea** —
-and adding another is a single entry.
+seven so far — **The Tavern**, **The Wilds**, **The Markets**, **The Night Watch**, **At Sea**,
+**The Grove**, and **The Derelict** — and adding another is a single entry.
 
 ## Layout
 
@@ -65,6 +68,7 @@ css/games/<id>.css      styles for one game; only that game's page loads it
 js/games.config.js      THE registry: themes, accents, rules, sound URLs
 js/run.js               the 10:00 clock and score
 js/shell.js             the contract every table implements
+js/dom.js               shared helpers: el(), plural(), svgEl(), svgPath()
 js/hub.js               hub rendering
 js/store.js             localStorage: best scores and preferences
 js/rng.js               seeded RNG
@@ -111,11 +115,56 @@ by Tabletop Audio. `soundUrl` can remain pointed at their homepage.
 
 Nothing else. The hub picks it up from the registry automatically.
 
+## Rules the code does not enforce
+
+There is no build, no linter and no test runner here, so the conventions below
+are kept by hand. They are the traps — read them before changing a table or the
+shell.
+
+- **Score added from `stop()` never reaches the summary.** The shell captures the
+  score in its `onEnd`, then calls `game.stop(ctx)`. Anything awarded after that
+  moment is silently lost. End-of-run scoring has to land while
+  `ctx.run.remainingMs` is still above zero, which is why Higher or Lower and
+  Magical Flora settle on a clock poll a second before the bell.
+- **A game must never depend on the sound.** The player can decline the track,
+  `ctx` carries no audio handle, and no cue may assume music is playing. Danse de
+  Vampyr drives its own beat from a `performance.now()` clock instead.
+- **Read `ctx.rng` live.** It is reassigned at the start of every run, so caching
+  it gives you the previous run's generator.
+- **Nothing binds a key.** The site is mouse-only on purpose, so it stays usable
+  on a touch screen: neither the shell nor any table adds a keydown handler, and a
+  new table must not add one either. Give every control a click handler and a
+  visible button. Buttons remain focusable and activatable by the browser itself —
+  that is the browser's affordance, not a shortcut we wrote.
+- **A table has to fit a phone.** Touch is the second target of every layout
+  decision, not a fallback, so a table is not finished until it has been played on
+  one. Boards are `width: min(<px>, 100%)`, cells keep an `aspect-ratio` rather
+  than a height in rem, and text-bearing grid children take `min-width: 0` so one
+  long word cannot push a board past the viewport. Nothing may need a hover to
+  read — the `:hover` rules here are decoration — and a table may add a
+  `@media (max-width: 440px)` step for the smallest screens. Nothing scrolls
+  sideways.
+- **Cues may not move.** `css/tokens.css` neutralises CSS animation and
+  transition under `prefers-reduced-motion`, so a beat, pulse or flash has to be
+  driven in JavaScript and needs a static fallback that still reads.
+- **`.stage` centres with `align-items`, never `place-items`.** A centred grid
+  item is sized to its max-content width, so percentage widths inside a table
+  resolve against a shrink-to-fit box and a board can collapse to nothing. See
+  the comment in `css/game.css`.
+- **One table, one module, one stylesheet.** A table builds only inside
+  `ctx.stage`, and no two tables import each other. That independence is what
+  keeps a broken table to a single page.
+
 ## Notes
 
 - Each table has its own best score, stored under `ttagames.best.<id>`. There is no
   currency and no shared purse — nothing to manage and no way to get stuck.
 - The 10:00 clock pauses whenever the tab loses visibility, so switching to the
   Tabletop Audio tab does not burn your run.
-- Everything is keyboard-operable. Space or Enter is the primary action; Higher or
-  Lower uses the left and right arrows.
+- Everything is played with a mouse or a finger. No table binds a shortcut key:
+  every control is a button, so the whole site works on a touch screen. Buttons
+  stay focusable, so Tab and Space still work for anyone who wants them — that is
+  the browser, not a shortcut we wrote.
+- Every table is played on a phone as part of finishing it. The boards, the
+  readouts and the controls are sized from the phone outwards, and the whole set was
+  checked on one on 2026-09-25.

@@ -53,6 +53,18 @@ export const CATEGORIES = [
     title: 'At Sea',
     blurb: 'Close passages, low light, and a way out somewhere ahead.',
   },
+  {
+    id: 'grove',
+    title: 'The Grove',
+    blurb:
+      'The far beds of the garden, where the soil runs thin between worlds. Nothing here is in a hurry, and nothing here bites.',
+  },
+  {
+    id: 'derelict',
+    title: 'The Derelict',
+    blurb:
+      'A stopped station, a dead crew, and something aboard that can hear you. One bite and the hunt is over, and there is no help coming.',
+  },
 ];
 
 export const GAMES = [
@@ -78,10 +90,10 @@ export const GAMES = [
     tagline: 'Call the card',
     category: 'tavern',
     accent: '#b8443f',
-    scoreLabel: 'cards called',
+    scoreLabel: 'banked',
     rules:
-      'Call the next card higher or lower. A right call is a point, a wrong one ends the round, a tie costs nothing.',
-    // Two actions, so the table draws its own buttons and the shell shows none.
+      'Call the next card higher or lower. Every correct call grows the pot by your streak squared, but the pot is only yours once you bank it — and a wrong call takes everything on the table. A tie costs nothing, and the house settles any pot still on the table when the clock runs out.',
+    // Three actions — lower, higher, bank — so the table draws its own buttons.
     actionLabel: null,
     track: {
       title: 'The Slaughtered Ox',
@@ -254,6 +266,57 @@ export const GAMES = [
     track: {
       title: "All Hallows' Eve",
       audioUrl: 'https://sounds.tabletopaudio.com/230_All_Hallows_Eve.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'magical-flora',
+    title: 'Magical Flora',
+    tagline: 'Grow across planes',
+    category: 'grove',
+    accent: '#7cc36a',
+    scoreLabel: 'flora grown',
+    rules:
+      'Plant the seeds that drift in from the planes. A neighbour of the same plane pays 1, a neighbour of another plane pays 3. Ring a plot with four plants of at least three different planes — or with four blooms — and it blooms: it keeps its own colour and reads as a stranger to everything. The border is thin soil: a seed planted there pays 2 more, though only the inner plots can ever be ringed. The grove must stay joined, the hand must be spent or composted, and when the hand runs out the grove matures: a harvest, a wider plane mix, and every point of the next season worth the season number. An unfinished season is harvested at the bell.',
+    // The seed rail and the grove are the controls; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: 'Magical Flora',
+      audioUrl: 'https://sounds.tabletopaudio.com/423_Magical_Flora.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'bug-hunt',
+    title: 'Bug Hunt',
+    tagline: 'Hunt it back',
+    category: 'derelict',
+    accent: '#6b93a8',
+    scoreLabel: 'confirmed kills',
+    rules:
+      'Something is aboard, and the station is sixteen compartments. Your gun fires down your row or your column, so hold a lane rather than standing in its reach — and you can slip diagonally through the service hatches while it can only walk the corridors. If it reaches you the sector is over: what you earned is kept, and the hunt moves on. Two seals a sector bar a door when there is nowhere left to go, and the shot that empties its plates kills it before it lands. Every third sector a matriarch: plated while she has the armour for it, then open and relentless. The score is the body count — hits, clean fights and cleared sectors are worth nothing on their own, so only a dead creature counts.',
+    // Fire, seal and hold are the controls; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: 'Bug Hunt',
+      audioUrl: 'https://sounds.tabletopaudio.com/427_Bug_Hunt.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'fire-dance',
+    title: 'Fire Dance',
+    tagline: 'Hold the light',
+    category: 'wilds',
+    accent: '#d9603c',
+    scoreLabel: 'rites completed',
+    rules:
+      'One bonfire in a clearing at night, and something pacing outside its light. The fire level is how far the light reaches, and the beast takes ground only while it stands in the dark — so keeping the light on it is what holds it, and the closer you let it come, the less light that takes. Nothing drains the fire on its own, but every action but the log is paid for out of it: a step of the rite burns a level of light or two, the walk to the woodpile burns one, and a log gives back three to six — both rolled each turn and shown before you choose. The beast takes ground whenever the light no longer reaches it. Feed a log back in, walk out to the woodpile for more of them, or spend the light on the rite. Verses deepen the night one dial at a time, and the tell on the board says how far it means to come. Three dancers are three mistakes; lose them all and the dance simply starts again from the first verse, with everything you have scored kept.',
+    // Dance, feed and gather are the controls; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: 'Fire Dance',
+      audioUrl: 'https://sounds.tabletopaudio.com/430_Fire_Dance.mp3',
       soundUrl: SOUND_HOME,
     },
   },

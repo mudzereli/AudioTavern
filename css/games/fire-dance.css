@@ -66,6 +66,12 @@
   background: var(--accent-soft);
 }
 
+/* A rite just completed: the counter lights with the clearing. */
+.fire__chip--flared {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* The clearing ------------------------------------------------------------ */
 
 .fire__clearing {
@@ -100,76 +106,90 @@
   );
 }
 
-/* The fire itself: one tongue per level, lit from the bottom, tapering as it
-   climbs, so its height is the number without anything having to flicker. */
-.fire__flame {
+/* The fire, drawn: two logs, a flame and its core, and the whole drawing scaled
+   to the level from JavaScript — so the height of the fire is the height of the
+   light, and the ring always agrees with the picture. */
+.fire__blaze {
   position: absolute;
-  bottom: 21%;
+  bottom: 38%;
   left: 50%;
+  height: var(--flame, 20%);
+  width: calc(var(--flame, 20%) * 0.625);
   transform: translateX(-50%);
-  width: 22%;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 2px;
+  color: var(--accent);
+  transition: height 0.2s ease, width 0.2s ease;
 }
 
-.fire__tongue {
-  width: 100%;
-  height: 0.5rem;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--line) 55%, transparent);
+/* The logs are the only part that is not the fire, so they keep their own
+   colour when the fire is at its brightest. */
+.fire__blaze .fire__logs {
+  color: var(--ink-3);
 }
 
-.fire__tongue--lit {
-  background: var(--accent);
+.fire__blaze .fire__logs rect {
+  fill: currentColor;
 }
 
-.fire__tongue:nth-child(2) {
-  width: 90%;
+.fire__blaze .fire__core {
+  color: color-mix(in srgb, var(--accent) 42%, #ffe7c4);
 }
 
-.fire__tongue:nth-child(3) {
-  width: 80%;
+/* Out: the flame is gone and the logs are cold. Nothing is hidden about it. */
+.fire__blaze--out {
+  color: var(--ink-3);
 }
 
-.fire__tongue:nth-child(4) {
-  width: 68%;
+.fire__blaze--out .fire__body,
+.fire__blaze--out .fire__core {
+  opacity: 0;
 }
 
-.fire__tongue:nth-child(5) {
-  width: 56%;
-}
-
-.fire__tongue:nth-child(6) {
-  width: 44%;
-}
-
-/* The beast: one pip on the ray above the fire, at the ring's own scale. */
+/* The face at the treeline: one silhouette in the beast's own colour, with only
+   the eyes and the fangs lit. Those stay lit when the light holds it, because a
+   grey demon watching you from just outside the ring is what held should feel
+   like. Upright, not turned: a face is read as a face. */
 .fire__beast {
   position: absolute;
   top: calc(50% - var(--out, 40%));
   left: 50%;
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 1.5rem;
+  height: 1.4rem;
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: var(--bad);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 20%, transparent);
+  color: var(--bad);
   transition: top 0.18s ease;
+}
+
+.fire__beast .fire__glow {
+  color: #ffdfae;
 }
 
 /* Held at the edge: it is inside the light, and the light is why it is not
    coming any closer. That is the difference the player is playing for. */
 .fire__clearing--held .fire__beast {
-  background: var(--ink-3);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-3) 18%, transparent);
+  color: var(--ink-3);
 }
 
 /* The fire is out: nothing is holding anything anywhere. */
 .fire__clearing--dark {
   border-color: var(--bad);
   background: color-mix(in srgb, #180d0c 70%, var(--bg));
+}
+
+/* A completed rite, for a beat. The light throws an echo of itself, the fire
+   burns brighter and the dancers straighten up — every bit of it a state that
+   lasts FLARE_MS and then goes, because tokens.css neutralises motion and the
+   completion has to read with it switched off. */
+.fire__clearing--flared .fire__ring {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.fire__clearing--flared .fire__blaze {
+  color: color-mix(in srgb, var(--accent) 62%, #ffe7c4);
+}
+
+.fire__clearing--flared .fire__dancer {
+  color: var(--ink);
 }
 
 /* The dancers: three silhouettes, and the only death the player ever sees. */
@@ -183,10 +203,9 @@
 }
 
 .fire__dancer {
-  width: 0.5rem;
-  height: 0.8rem;
-  border-radius: 45% 45% 40% 40%;
-  background: var(--ink-2);
+  width: 0.62rem;
+  height: 0.98rem;
+  color: var(--ink-2);
   transition: opacity 0.2s ease;
 }
 
@@ -228,9 +247,14 @@
 
 .fire__action-net {
   font-family: var(--font-num);
-  font-size: 0.56rem;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  /* The button's own colour, dimmed. It has to read on the primary button
+     (accent ink on the accent) as well as on the two ghosts, so it must not
+     carry a colour of its own — a muted ink vanishes against the accent. */
+  color: inherit;
+  opacity: 0.78;
 }
 
 .fire__hint {
