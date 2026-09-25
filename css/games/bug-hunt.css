@@ -1,0 +1,256 @@
+/* ---------------------------------------------------------------------------
+   bug-hunt.css — the station.
+
+   Nine compartments, a readout of everything that runs out, and one threat.
+   The board has to be readable at a glance, because the whole game is reading
+   it: where you are, where it is, whether it is plated, and which compartment it
+   means to be in next.
+
+   Every state here is a static colour or ring change, never motion:
+   tokens.css neutralises animation and transition under prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+
+.hunt {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+}
+
+/* The readout -------------------------------------------------------------- */
+
+.hunt__readout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.hunt__chip {
+  display: grid;
+  justify-items: center;
+  min-width: 4.6rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.hunt__chip-label {
+  font-family: var(--font-num);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hunt__chip-value {
+  font-family: var(--font-num);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hunt__chip--boss {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+/* Plating is the read that costs you a round, so it is called out in red. */
+.hunt__chip--plated {
+  border-color: var(--bad);
+}
+
+.hunt__chip--plated .hunt__chip-value {
+  color: var(--bad);
+}
+
+/* The station ------------------------------------------------------------- */
+
+.hunt__board {
+  width: min(480px, 100%);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.hunt__cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  font: inherit;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-2) 55%, var(--bg));
+  color: var(--ink-3);
+  cursor: default;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.hunt__room {
+  font-family: var(--font-num);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hunt__mark {
+  font-size: 0.62rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.hunt__mark--you {
+  font-family: var(--font-num);
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* The creature, drawn rather than spelled out: one shell arc per plate of armour,
+   six legs — eight on a matriarch — and a small caption with the exact number.
+   It is rotated from JavaScript to face the compartment you are standing in. */
+.hunt__figure {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 46px;
+}
+
+.hunt__bug {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--ink);
+}
+
+.hunt__bug--plated {
+  color: var(--bad);
+}
+
+.hunt__plates {
+  font-family: var(--font-num);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.hunt__plates--plated {
+  color: var(--bad);
+}
+
+/* Where you are, what is hunting, and where it means to be. */
+
+.hunt__cell--here {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hunt__cell--creature {
+  border-color: var(--ink-3);
+  background: color-mix(in srgb, #2a1218 70%, var(--panel-2));
+}
+
+.hunt__cell--threat {
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+
+.hunt__cell--reachable {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  cursor: pointer;
+}
+
+.hunt__cell--reachable:hover {
+  border-color: var(--accent);
+}
+
+/* Your line of fire, lit whenever the thing is standing in it. */
+.hunt__cell--lane {
+  border-color: var(--accent-line);
+}
+
+.hunt__cell--door {
+  cursor: pointer;
+}
+
+.hunt__cell--door:hover {
+  border-color: var(--accent);
+}
+
+.hunt__cell--target {
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+
+/* A barred door, drawn on the edge it sits in. */
+
+.hunt__seal {
+  position: absolute;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.hunt__seal--n {
+  top: -2px;
+  left: 12%;
+  right: 12%;
+  height: 4px;
+}
+
+.hunt__seal--e {
+  right: -2px;
+  top: 12%;
+  bottom: 12%;
+  width: 4px;
+}
+
+.hunt__seal--s {
+  bottom: -2px;
+  left: 12%;
+  right: 12%;
+  height: 4px;
+}
+
+.hunt__seal--w {
+  left: -2px;
+  top: 12%;
+  bottom: 12%;
+  width: 4px;
+}
+
+/* What happens next ------------------------------------------------------ */
+
+.hunt__order {
+  min-height: 1.2em;
+  max-width: 48ch;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+
+/* The actions ------------------------------------------------------------- */
+
+.hunt__bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.hunt__action--armed {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-line);
+}
+
+.hunt__hint {
+  max-width: 52ch;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
