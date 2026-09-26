@@ -118,14 +118,20 @@
 .hunt__figure {
   display: grid;
   place-items: center;
-  width: 100%;
+  /* Sized from the height the label rows leave over, not from a fixed 46px:
+     a fixed figure plus the two captions outgrows a square compartment on a
+     phone and stretches the whole board into rectangles. */
+  height: min(46px, 100%);
+  min-height: 0;
   max-width: 46px;
+  max-height: 46px;
+  aspect-ratio: 1;
 }
 
 .hunt__bug {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   color: var(--ink);
 }
 
@@ -145,6 +151,12 @@
 }
 
 /* Where you are, what is hunting, and where it means to be. */
+
+/* The creature's compartment hands its leftover height to the figure between the
+   two caption rows, so the room stays a square. */
+.hunt__cell--creature {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
 
 .hunt__cell--here {
   border-color: var(--accent);

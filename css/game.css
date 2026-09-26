@@ -215,12 +215,19 @@
 
 /* Overlay ------------------------------------------------------------------ */
 
+/* Flex rather than grid on purpose: a grid/flex item centred with align-items
+   overflows past the top edge and that part can never be scrolled to. The panel
+   instead centres itself with auto margins, which collapse to zero when there is
+   no room — so a panel taller than the screen starts at the top and scrolls. */
 .overlay {
   position: fixed;
   inset: 0;
   z-index: 10;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 1.2rem;
   background: rgb(6 5 5 / 0.82);
   backdrop-filter: blur(3px);
@@ -232,6 +239,7 @@
 
 .panel {
   width: min(432px, 100%);
+  margin: auto;
   padding: 1.9rem 1.6rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -311,6 +319,27 @@
   margin-top: 1.1rem;
   font-size: 0.78rem;
   color: var(--ink-3);
+}
+
+/* A phone has no room for the full-size panel: tighten it so the rules and the
+   start button usually meet without a scroll at all. */
+@media (max-width: 440px) {
+  .overlay {
+    padding: 0.8rem;
+  }
+
+  .panel {
+    padding: 1.35rem 1.1rem;
+  }
+
+  .panel__title {
+    font-size: 1.65rem;
+    margin: 0.4rem 0 0.55rem;
+  }
+
+  .panel__actions {
+    margin-top: 1.15rem;
+  }
 }
 
 /* Dice --------------------------------------------------------------------- */
