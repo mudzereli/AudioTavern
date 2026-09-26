@@ -4,16 +4,64 @@
   justify-items: center;
 }
 
-.pig__dice-slot {
-  min-height: 3.5rem;
+/* The race to 100. Three shared columns — name, bar, number — so both lanes
+   start and end at exactly the same x. `display: contents` on each lane lets
+   its three parts sit directly in this grid. */
+.pig__race {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  width: min(100%, 330px);
+}
+
+.pig__side {
+  display: contents;
+}
+
+.pig__bar {
+  height: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+/* The fill is decoration over a number that is always readable, so the width
+   transition is safe to lose under prefers-reduced-motion. */
+.pig__fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--ink-3);
+  transition: width 0.2s ease;
+}
+
+.pig__side--you .pig__fill {
+  background: var(--accent);
+}
+
+.pig__num {
+  font-family: var(--font-num);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  /* Three characters, so 9 to 100 does not shove the bar sideways. */
+  min-width: 3ch;
+  text-align: right;
+}
+
+.pig__side--you .pig__num {
+  color: var(--accent);
+}
+
+/* Reserves the die's height so the board does not jump when the die appears on
+   the first roll of a round. */
+.pig__die {
   display: grid;
   place-items: center;
+  min-height: 58px;
 }
 
 .pig__total { font-family: var(--font-num); font-size: 2.6rem; color: var(--accent); }
-.pig__tokens { min-height: 2.75rem; display: flex; align-items: center; gap: 0.6rem; color: var(--ink-2); }
-.pig__tokens strong { font-family: var(--font-num); font-size: 1.2rem; color: var(--accent); }
 .pig__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
 .pig .bar { width: min(320px, 100%); }
-
-.pig__tokens [hidden] { display: none; }

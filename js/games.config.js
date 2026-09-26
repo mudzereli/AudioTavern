@@ -104,12 +104,12 @@ export const GAMES = [
   {
     id: 'pig',
     title: 'Pig',
-    tagline: 'Roll and bank',
+    tagline: 'Beat the house',
     category: 'tavern',
     accent: '#55935f',
-    scoreLabel: 'points banked',
+    scoreLabel: 'points',
     rules:
-      'Roll to build a total, but a one wipes the round. Every 100 banked points earns a stackable reroll. Reroll a shown die, but a one still busts.',
+      'Roll one die to build a round; a one takes the lot, so banking is the only way to keep it. A house races you from 0 to 100 and always moves first, taking a random step of 3 to 9 at the top of every round. Reach 100 before it does and you score whatever it still had left to travel — the pot itself is worth nothing, it only carries you there. Lose the leg and nothing is taken from you — you have simply spent the minutes.',
     actionLabel: 'Roll',
     track: {
       title: 'Viking Tavern',

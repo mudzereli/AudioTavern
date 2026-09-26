@@ -38,7 +38,7 @@ folder to any static host — no compilation, no dependencies.
 | --- | --- | --- | --- |
 | Bones | Shut the Box | Roll two dice, then shut tiles that add up to the roll. | Tavern Music |
 | Higher or Lower | Card calling | Call the next card higher or lower and bank the pot before a miss takes it. | The Slaughtered Ox |
-| Pig | Roll and bank | Roll to build a total, but a one wipes it. Bank before you bust. | Viking Tavern |
+| Pig | Race the house | Roll one die and bank before a one takes the round, racing a house to 100 that always moves first. Only the margin you win a leg by scores as points — the pot itself pays nothing. | Viking Tavern |
 | Pairs | Memory | Turn up two cards at a time and remember what you saw. | The Hearth Inn |
 | Crown & Anchor | Symbol dice | Call a symbol, roll three dice, score every die that matches. | Tavern Celebration |
 | Blastfire | Bog crossing | Probe patches of bog to find a way across; numbers count nearby gas pockets. | Blastfire Bog |

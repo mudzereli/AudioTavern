@@ -1,16 +1,61 @@
 /* ---------------------------------------------------------------------------
-   Pig — roll and bank.
+   Pig — beat the house.
 
-   Roll to build a round total, but a single one wipes the round and takes the
-   whole lot with it. Banking keeps what you have and starts again. The nerve is
-   the game: every extra roll is worth more and risks more.
+   One die and the oldest bargain in dice: a one takes the round, so banking is
+   the only way to keep anything. On its own that goes flat. With nobody to
+   race, the best play is a fixed threshold and the round stops being a
+   decision.
+
+   So there is a house. It runs from 0 to 100 beside you and it ALWAYS MOVES
+   FIRST — at the top of every round it takes a random step of HOUSE_MIN to
+   HOUSE_MAX. Reach 100 before it does and it pays you everything it still had
+   left to travel, and THAT MARGIN IS THE ONLY THING THAT SCORES: a pot never
+   pays a point on its own, it only carries you towards the hundred. Lose the
+   leg and nothing is taken from your score — you have simply spent the minutes.
+
+   The step is the entire difficulty and the only dial worth touching. A round
+   of this game is worth about 8 points to a good player, so the house's mean
+   step has to sit under that or the race is unwinnable rather than hard.
+   HOUSE_MIN 3 / HOUSE_MAX 9 means a mean of 6.
    --------------------------------------------------------------------------- */
 
-import { renderDice, roll } from '../dice.js';
+import { renderDie, roll } from '../dice.js';
 import { plural } from '../dom.js';
+import { randInt } from '../rng.js';
 
-/** Pause after a bust or a bank, long enough to see what you got. */
+/** Points either side needs to take a leg. */
+const HOUSE_TARGET = 100;
+
+/**
+ * What the house takes at the top of a round, both ends inclusive.
+ * THIS IS THE DIAL. Mean 6 against a player ceiling of about 8 a round.
+ * Easier: 2/6. Harder: 4/12. Past a mean of ~8 the race cannot be won.
+ */
+const HOUSE_MIN = 3;
+const HOUSE_MAX = 9;
+
+/** Pause after a round ends, long enough to see what happened. */
 const BEAT_MS = 950;
+
+/** One lane of the race: a name, a bar, and the running number. */
+function raceLine(label, modifier, fill, num) {
+  const line = document.createElement('div');
+  line.className = `pig__side ${modifier}`;
+
+  const name = document.createElement('span');
+  name.className = 'cap';
+  name.textContent = label;
+
+  const bar = document.createElement('span');
+  bar.className = 'pig__bar';
+  fill.className = 'pig__fill';
+  bar.append(fill);
+
+  num.className = 'pig__num';
+
+  line.append(name, bar, num);
+  return line;
+}
 
 const game = {
   id: 'pig',
@@ -21,11 +66,24 @@ const game = {
     const wrap = document.createElement('div');
     wrap.className = 'pig';
 
-    const diceSlot = document.createElement('div');
-    diceSlot.className = 'pig__dice-slot';
+    /* The race. The house is on top because the house moves first. */
+    const race = document.createElement('div');
+    race.className = 'pig__race';
+
+    this.houseFill = document.createElement('span');
+    this.houseNum = document.createElement('strong');
+    this.youFill = document.createElement('span');
+    this.youNum = document.createElement('strong');
+
+    race.append(
+      raceLine('The house', 'pig__side--house', this.houseFill, this.houseNum),
+      raceLine('You', 'pig__side--you', this.youFill, this.youNum),
+    );
+
+    /* The die slot keeps the die's height reserved, so the board does not jump
+       when the die appears on the first roll of a round. */
     this.diceEl = document.createElement('span');
-    this.diceEl.className = 'dice';
-    diceSlot.append(this.diceEl);
+    this.diceEl.className = 'pig__die';
 
     this.roundLabelEl = document.createElement('p');
     this.roundLabelEl.className = 'cap';
@@ -35,42 +93,26 @@ const game = {
     this.totalEl.className = 'pig__total';
     this.totalEl.textContent = '0';
 
-    this.tokensEl = document.createElement('div');
-    this.tokensEl.className = 'pig__tokens';
-    const tokenLabel = document.createElement('span');
-    tokenLabel.textContent = 'Rerolls';
-    this.tokenCountEl = document.createElement('strong');
-    this.tokensEl.append(tokenLabel, this.tokenCountEl);
-
     this.bankBtn = document.createElement('button');
     this.bankBtn.type = 'button';
     this.bankBtn.className = 'btn btn--ghost';
     this.bankBtn.textContent = 'Bank';
     this.bankBtn.addEventListener('click', () => this.bank());
 
-    this.rerollBtn = document.createElement('button');
-    this.rerollBtn.type = 'button';
-    this.rerollBtn.className = 'btn btn--ghost';
-    this.rerollBtn.textContent = 'Reroll';
-    this.rerollBtn.disabled = true;
-    this.rerollBtn.hidden = true;
-    this.rerollBtn.addEventListener('click', () => this.reroll());
-    this.tokensEl.append(this.rerollBtn);
-
     const actions = document.createElement('div');
     actions.className = 'pig__actions';
     actions.append(this.bankBtn);
 
-    wrap.append(diceSlot, this.roundLabelEl, this.totalEl, this.tokensEl, actions, ctx.actionBar);
+    wrap.append(race, this.diceEl, this.roundLabelEl, this.totalEl, actions, ctx.actionBar);
     ctx.stage.append(wrap);
   },
 
   start(ctx) {
     this.alive = true;
-    this.bankedTotal = 0;
-    this.milestones = 0;
-    this.tokens = 0;
-    this.updateTokenCount();
+    this.house = 0;
+    this.you = 0;
+    this.die = null;
+    this.renderRace();
     this.newRound(ctx);
   },
 
@@ -85,156 +127,150 @@ const game = {
   newRound(ctx) {
     this.locked = false;
     this.round = 0;
-    this.roundBeforeLastRoll = 0;
-    this.lastRoll = null;
-    this.canReroll = false;
-    this.pendingBust = false;
-
-    this.diceEl.replaceChildren();
-    this.totalEl.textContent = '0';
+    this.die = null;
     this.roundLabelEl.textContent = 'this round';
     this.bankBtn.textContent = 'Bank';
     this.bankBtn.disabled = true;
-    this.updateRerollButton();
+    this.render();
+
+    // The house moves first, so a round always opens with the target already on
+    // the board and the player knowing exactly how much of the leg is left.
+    const step = randInt(ctx.rng, HOUSE_MIN, HOUSE_MAX);
+    this.house = Math.min(HOUSE_TARGET, this.house + step);
+    this.renderRace();
+
+    if (this.house >= HOUSE_TARGET) {
+      this.loseLeg(ctx, step);
+      return;
+    }
 
     ctx.setActionLabel('Roll');
     ctx.setActionEnabled(true);
-    ctx.message('Roll, or bank what you have.');
+    ctx.message(
+      `The house takes ${step} — ${HOUSE_TARGET - this.house} from the end. You need ${HOUSE_TARGET - this.you}.`,
+    );
   },
 
   /* ---------------------------------------------------------------- action */
 
   act(ctx) {
-    if (this.locked || this.pendingBust || !this.alive) return;
+    if (this.locked || !this.alive) return;
 
-    this.roundBeforeLastRoll = this.round;
     const [value] = roll(ctx.rng, 1, 6);
-    this.diceEl.replaceChildren(renderDice([value]));
-    this.lastRoll = value;
+    this.die = value;
 
     if (value === 1) {
-      this.round = 0;
-      if (this.tokens > 0) {
-        this.pendingBust = true;
-        this.roundLabelEl.textContent = 'subtotal at risk';
-        this.totalEl.textContent = String(this.roundBeforeLastRoll);
-        this.bankBtn.textContent = 'Accept bust';
-        this.bankBtn.disabled = false;
-        this.canReroll = true;
-        this.updateRerollButton();
-        ctx.setActionEnabled(false);
-        ctx.message(`A one. Your ${this.roundBeforeLastRoll} points are at risk. Reroll it, or accept the bust.`);
-      } else {
-        this.totalEl.textContent = '0';
-        this.finishBust(ctx);
-      }
+      this.finishBust(ctx, this.round);
       return;
     }
 
     this.round += value;
-    this.canReroll = true;
-    this.totalEl.textContent = String(this.round);
     this.bankBtn.disabled = false;
-    this.updateRerollButton();
+    this.render();
+
     ctx.setActionEnabled(true);
     ctx.message(`Rolled ${value}. Round total ${this.round}.`);
   },
 
   bank() {
     if (!this.alive || this.locked) return;
-    if (this.pendingBust) {
-      this.acceptBust();
-      return;
-    }
     if (this.round === 0) return;
 
+    // The pot does not score. All it does is carry the leg counter towards 100,
+    // and it is the margin on the finished leg that pays (see winLeg).
     const ctx = this.ctx;
     const banked = this.round;
-    const previousMilestones = this.milestones;
-    this.bankedTotal += banked;
-    this.milestones = Math.floor(this.bankedTotal / 100);
-    const earnedTokens = this.milestones - previousMilestones;
-    this.tokens += earnedTokens;
-    this.updateTokenCount();
+    this.you += banked;
 
-    ctx.addPoints(banked);
     this.locked = true;
     this.bankBtn.disabled = true;
-    this.canReroll = false;
-    this.updateRerollButton();
     ctx.setActionLabel('Roll');
     ctx.setActionEnabled(false);
-    ctx.message(earnedTokens
-      ? `Banked ${banked}. Earned ${earnedTokens} ${plural(earnedTokens, 'reroll')}.`
-      : `Banked ${banked}.`);
-    this.settle(ctx);
-  },
+    this.render();
 
-  reroll() {
-    if (!this.alive || this.locked || !this.canReroll || this.tokens === 0) return;
-
-    const ctx = this.ctx;
-    this.round = this.roundBeforeLastRoll;
-    this.pendingBust = false;
-    this.tokens -= 1;
-    this.canReroll = false;
-    this.updateTokenCount();
-
-    const [value] = roll(ctx.rng, 1, 6);
-    this.lastRoll = value;
-    this.diceEl.replaceChildren(renderDice([value]));
-
-    if (value === 1) {
-      this.finishBust(ctx);
+    // Take the leg before the house gets to move again.
+    if (this.you >= HOUSE_TARGET) {
+      this.winLeg(ctx, banked);
       return;
     }
 
-    this.round += value;
-    this.totalEl.textContent = String(this.round);
-    this.roundLabelEl.textContent = 'this round';
-    this.bankBtn.textContent = 'Bank';
-    this.bankBtn.disabled = false;
-    this.updateRerollButton();
-    ctx.setActionEnabled(true);
-    ctx.message(`Rerolled ${value}. Round total ${this.round}.`);
-  },
-
-  acceptBust() {
-    if (!this.pendingBust || this.locked) return;
-    this.pendingBust = false;
-    this.locked = true;
-    this.totalEl.textContent = '0';
-    this.roundLabelEl.textContent = 'round lost';
-    this.bankBtn.disabled = true;
-    this.canReroll = false;
-    this.updateRerollButton();
-    this.ctx.message('Bust accepted. The round is wiped.');
-    this.settle(this.ctx);
-  },
-
-  finishBust(ctx) {
-    this.pendingBust = false;
-    this.locked = true;
-    this.round = 0;
-    this.totalEl.textContent = '0';
-    this.roundLabelEl.textContent = 'round lost';
-    this.bankBtn.textContent = 'Bank';
-    this.bankBtn.disabled = true;
-    this.canReroll = false;
-    this.updateRerollButton();
-    ctx.setActionLabel('Roll');
-    ctx.setActionEnabled(false);
-    ctx.message('A one. The round is wiped.');
+    this.renderRace();
+    ctx.message(`Banked ${banked}. You are ${this.you} of ${HOUSE_TARGET}.`);
     this.settle(ctx);
   },
 
-  updateTokenCount() {
-    this.tokenCountEl.textContent = String(this.tokens);
-    this.rerollBtn.hidden = this.tokens === 0;
+  /* ------------------------------------------------------------------ legs */
+
+  /* The only scoring in the table: what the house still had to travel when you
+     crossed 100. Cheapest leg pays 1, a house that stalled pays near 100. */
+  winLeg(ctx, banked) {
+    const bonus = HOUSE_TARGET - this.house;
+    this.locked = true;
+    ctx.addPoints(bonus);
+    ctx.setActionLabel('Roll');
+    ctx.setActionEnabled(false);
+
+    this.round = 0;
+    this.die = null;
+    this.you = 0;
+    this.house = 0;
+    this.roundLabelEl.textContent = 'leg taken';
+    this.render();
+    this.renderRace();
+
+    ctx.message(
+      `Banked ${banked} to take the leg. The house had ${bonus} still to travel — ${bonus} ${plural(bonus, 'point', 'points')}.`,
+    );
+    this.settle(ctx);
   },
 
-  updateRerollButton() {
-    this.rerollBtn.disabled = !this.alive || this.locked || !this.canReroll || this.tokens === 0;
+  loseLeg(ctx, step) {
+    this.locked = true;
+    ctx.setActionLabel('Roll');
+    ctx.setActionEnabled(false);
+
+    this.round = 0;
+    this.die = null;
+    this.you = 0;
+    this.house = 0;
+    this.roundLabelEl.textContent = 'leg lost';
+    this.render();
+    this.renderRace();
+
+    ctx.message(`The house takes ${step} and reaches 100 first. Nothing is lost — a new leg starts now.`);
+    this.settle(ctx);
+  },
+
+  finishBust(ctx, lost) {
+    this.locked = true;
+    this.round = 0;
+    this.roundLabelEl.textContent = 'round lost';
+    this.bankBtn.textContent = 'Bank';
+    this.bankBtn.disabled = true;
+    this.render();
+    ctx.setActionLabel('Roll');
+    ctx.setActionEnabled(false);
+    ctx.message(lost > 0 ? `A one. ${lost} points gone.` : 'A one. The round is gone.');
+    this.settle(ctx);
+  },
+
+  /* ---------------------------------------------------------------- chrome */
+
+  /* The one place the round is painted. The die and the total are set together
+     on purpose: when the total was written at each call site instead, one of
+     those writes went missing and the board sat at 0 while the die kept
+     rolling. */
+  render() {
+    this.diceEl.replaceChildren();
+    if (this.die !== null) this.diceEl.append(renderDie(this.die));
+    this.totalEl.textContent = String(this.round);
+  },
+
+  renderRace() {
+    this.houseFill.style.width = `${(this.house / HOUSE_TARGET) * 100}%`;
+    this.youFill.style.width = `${(this.you / HOUSE_TARGET) * 100}%`;
+    this.houseNum.textContent = String(this.house);
+    this.youNum.textContent = String(this.you);
   },
 
   settle(ctx) {
