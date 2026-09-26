@@ -157,9 +157,9 @@ export const GAMES = [
     tagline: 'Cross the bog',
     category: 'wilds',
     accent: '#a8b83c',
-    scoreLabel: 'patches probed',
+    scoreLabel: 'points',
     rules:
-      'Probe patches of bog to find a way across. A number counts the gas pockets alongside it, and one wrong step ends the round.',
+      'Probe patches of bog to find a way across. A number counts the gas pockets alongside it, and one wrong step ends the round. Every patch opened pays a point, and crossing the whole bog pays 100 more — so the crossing is the prize, and how far you got still counts for something.',
     // Clicking patches is the action; there is no button to press.
     actionLabel: null,
     track: {
@@ -174,11 +174,11 @@ export const GAMES = [
     tagline: 'Find the mark',
     category: 'markets',
     accent: '#c47743',
-    scoreLabel: 'marks found',
+    scoreLabel: 'marks read',
     rules:
-      'Read the broker’s description, then pick the matching figure from the crowd. A read inside four seconds pays double, and every fourth clean read in a row the broker pays a bonus on top. A wrong pick costs nothing but the streak.',
-    // The crowd itself is the control; the shell action bar stays hidden.
-    actionLabel: null,
+      'The broker never gives you a name. Each whisper is two or three clauses, and every clause on its own fits several people — so work out who fits all of them, or say "Not here" if the description fits nobody at all. One point a job; a wrong answer costs you only that job.',
+    // The crowd is the pick and the shell's one button is "Not here".
+    actionLabel: 'Not here',
     track: {
       title: "Assassin's Bazaar",
       audioUrl: 'https://sounds.tabletopaudio.com/519_Assassins_Bazaar.mp3',

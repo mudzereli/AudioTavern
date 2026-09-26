@@ -1,20 +1,14 @@
 .bazaar { width: min(520px, 100%); margin-inline: auto; display: grid; gap: 1rem; justify-items: center; }
 .bazaar__wanted { width: 100%; padding: 0.8rem 1rem; border-left: 3px solid var(--accent); background: var(--accent-soft); text-align: center; }
-.bazaar__clue { margin-top: 0.3rem; color: var(--ink-2); font-size: 0.94rem; }
-.bazaar__clue strong { color: var(--ink); }
+/* The whisper is a list of short clauses rather than a sentence: each one is
+   read separately against the crowd, which is what the job is. */
+.bazaar__clauses { display: grid; gap: 0.2rem; margin-top: 0.35rem; }
+.bazaar__clause { color: var(--ink-2); font-size: 0.94rem; }
 .bazaar__crowd { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; }
-.bazaar__record { width: min(420px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--line); }
-.bazaar__stat { min-width: 0; display: grid; justify-items: center; gap: 0.2rem; text-align: center; }
-.bazaar__record-label { font-size: 0.78rem; color: var(--ink-2); text-align: center; }
-.bazaar__record-value { font-family: var(--font-num); font-size: 1.4rem; color: var(--accent); }
-/* The streak is quiet until it is worth something, then it is the loudest thing
-   in the row: the only warning a miss ever gets. */
-.bazaar__streak-value { font-family: var(--font-num); font-size: 1.4rem; color: var(--ink-2); }
-.bazaar__streak-value--hot { color: var(--accent); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent); }
-.bazaar__last-pick { display: grid; justify-items: center; gap: 0.1rem; }
-.bazaar__last-pick-time { font-family: var(--font-num); font-size: 0.92rem; color: var(--ink-2); }
-.bazaar__record-value--correct { color: var(--accent); }
-.bazaar__record-value--incorrect { color: var(--bad); }
+/* The shell's single button, moved in under the crowd. It is the answer for the
+   jobs where the whisper fits nobody, so it sits apart from the tiles rather
+   than among them: nothing should ever be misclicked beside the crowd. */
+.bazaar__actions { width: 100%; }
 
 .bazaar__person {
   position: relative;
@@ -122,9 +116,21 @@
 .bazaar__person--correct { --pick-end-border: var(--accent); --pick-end-bg: var(--accent-soft); }
 .bazaar__person--miss { --pick-end-border: var(--bad); --pick-end-bg: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
 
+/* A right call of "not here" has no figure to flash — there is no figure — so the
+   button that made the call carries the flash instead: the same green and the
+   same keyframes, settling back to its own accent rather than a "marked" tint. */
+.bazaar__actions--correct .btn {
+  animation: bazaar-pick-flash 700ms ease-out;
+  --pick-flash: #69c77b;
+  --pick-flash-bg: #254b30;
+  --pick-end-border: var(--accent);
+  --pick-end-bg: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bazaar__person--correct,
-  .bazaar__person--miss { animation: none; border-color: var(--pick-flash); background-color: var(--pick-flash-bg); box-shadow: inset 0 0 0 2px var(--pick-flash); }
+  .bazaar__person--miss,
+  .bazaar__actions--correct .btn { animation: none; border-color: var(--pick-flash); background-color: var(--pick-flash-bg); box-shadow: inset 0 0 0 2px var(--pick-flash); }
 }
 
 @media (max-width: 440px) {

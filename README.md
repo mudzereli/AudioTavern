@@ -41,8 +41,8 @@ folder to any static host — no compilation, no dependencies.
 | Pig | Race the house | Roll one die and bank before a one takes the round, racing a house to 100 that always moves first. Only the margin you win a leg by scores as points — the pot itself pays nothing. | Viking Tavern |
 | Pairs | Memory | Turn up two cards at a time and remember what you saw. | The Hearth Inn |
 | Crown & Anchor | Symbol dice | Call a symbol, roll three dice, score every die that matches. | Tavern Celebration |
-| Blastfire | Bog crossing | Probe patches of bog to find a way across; numbers count nearby gas pockets. | Blastfire Bog |
-| Assassin's Bazaar | Visual deduction | Read the broker's clue, then find the matching hood and carried item in the crowd. A quick read pays double; a miss breaks your streak. | Assassin's Bazaar |
+| Blastfire | Bog crossing | Probe patches of bog to find a way across; numbers count nearby gas pockets. Every patch opened pays a point and a full crossing pays 100. | Blastfire Bog |
+| Assassin's Bazaar | Deduction | Read the broker's whisper — two or three clauses, each of which fits several people — and pick whoever fits all of them, or say "Not here" if it fits nobody. | Assassin's Bazaar |
 | The Last Watcher | Signal memory | Watch four beacons flash a sequence, then repeat it. | The Last Watcher |
 | Escape the Hold | Maze | Navigate safe cargo passages to the open hatch; backtracking is allowed. | Slave Ship Hold |
 | Ship Graveyard | Salvage | Load cargo from the wrecks and get it back to the skiff before the storm. | Ship Graveyard |

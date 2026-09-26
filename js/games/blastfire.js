@@ -6,9 +6,9 @@
    can be worked out rather than guessed at. One wrong step and the round goes
    up.
 
-   Scoring is progress, not survival: every patch opened is a point, and crossing
-   the whole bog pays a bonus. The first patch you touch is always safe, so a
-   round can never end on the opening move.
+   Scoring is progress plus a payoff: every patch opened is a point, and crossing
+   the whole bog pays a large bonus. The first patch you touch is always safe, so
+   a round can never end on the opening move.
    --------------------------------------------------------------------------- */
 
 import { shuffle } from '../rng.js';
@@ -16,7 +16,16 @@ import { shuffle } from '../rng.js';
 const COLS = 6;
 const ROWS = 6;
 const POCKETS = 6;
-const CLEAR_BONUS = 10;
+/**
+ * Paid for getting all the way across. Deliberately an order of magnitude above
+ * a single patch: the 30 safe patches are worth 30 between them, so the old 10
+ * made completing the board worth barely more than dying on its last patch.
+ *
+ * Keep it within roughly 10x of the patch ceiling. Much larger and the patch
+ * points stop being able to move the total, which collapses the score back into
+ * a plain crossing count with extra zeros.
+ */
+const CROSSING_BONUS = 100;
 const BEAT_MS = 1200;
 
 const GAS_GLYPH = '\u2739';
@@ -146,8 +155,8 @@ const game = {
     const safeTotal = COLS * ROWS - POCKETS;
     if (this.revealed.size >= safeTotal) {
       this.locked = true;
-      ctx.addPoints(CLEAR_BONUS);
-      ctx.message(`Bog crossed. ${CLEAR_BONUS} bonus points.`);
+      ctx.addPoints(CROSSING_BONUS);
+      ctx.message(`Bog crossed. ${CROSSING_BONUS} points for the crossing.`);
       this.settle(ctx);
       return;
     }

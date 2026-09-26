@@ -21,4 +21,9 @@
 .pairs__card .card__rank { font-size: 17cqw; }
 .pairs__card .card__suit { font-size: 15.5cqw; }
 .pairs__card .card__pip { font-size: 45cqw; }
-.pairs__card--matched { opacity: 0.55; }
+
+/* A matched card carries NO styling of its own. Staying face up is already the
+   whole signal, and fading it made the board duller the closer you got to
+   clearing it — so the best moment on the screen was the most washed out one.
+   If a matched card ever does need telling apart from a merely turned-over one,
+   mark the LIVE card rather than dimming the finished ones. */

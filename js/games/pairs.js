@@ -80,7 +80,6 @@ const game = {
     const faceUp = this.revealed.includes(index) || this.matched.has(index);
 
     button.replaceChildren(renderCard(card, { faceDown: !faceUp }));
-    button.classList.toggle('pairs__card--matched', this.matched.has(index));
     button.setAttribute('aria-label', faceUp ? `Card ${index + 1}: ${cardLabel(card)}` : `Card ${index + 1}: face down`);
     button.disabled = faceUp;
   },

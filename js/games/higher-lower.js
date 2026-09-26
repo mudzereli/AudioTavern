@@ -5,6 +5,11 @@
    streak squared, but the pot is only yours once you bank it, and a wrong call
    takes everything on the table. A tie costs nothing.
 
+   A hand ends when you bank or when a call misses, but the CARD CHAIN NEVER
+   BREAKS: the card on the table always becomes the base for the next call, so a
+   bank collects and carries on, and a miss loses only the pot. The pot and the
+   streak are the only things that ever reset.
+
    The pile is only a source of physical cards, so the same card cannot turn up
    twice in a pair. Nothing is counted or displayed: the calls are read off the
    table, and an ace or a two simply closes the side it cannot beat.
@@ -20,8 +25,12 @@ import { shuffle } from '../rng.js';
 const STEP_MS = 420;
 /** A miss: long enough to see the card that beat you. */
 const BEAT_MS = 1100;
-/** A bank: long enough to watch the pot leave the table. */
-const BANK_MS = 450;
+/**
+ * A bank. Deliberately LONGER than BEAT_MS: a bank is the good outcome, so it
+ * must never resolve faster than a miss or winning reads as a reset rather than
+ * a result. Do not shorten this below BEAT_MS.
+ */
+const BANK_MS = 1300;
 /** How often the bell is checked for the last call and the settle. */
 const CLOCK_MS = 250;
 /** Settle this long before the clock stops. See settleAtBell(). */
@@ -139,11 +148,17 @@ const game = {
     this.settled = false;
     this.lastCall = false;
     this.bestPot = 0;
+    this.streak = 0;
+    this.pot = 0;
+    this.revealed = null;
     this.deck = [];
     this.wrap.classList.remove('hl--lastcall');
     this.potPanel.classList.remove('hl__pot--lost', 'hl__pot--banked');
+    this.current = this.draw();
+    this.nextSlot.replaceChildren();
     this.startClock();
-    this.newHand();
+    this.beginHand();
+    this.ctx.message('Call the next card. Left arrow for lower, right for higher.');
   },
 
   stop() {
@@ -156,19 +171,24 @@ const game = {
 
   /* -------------------------------------------------------------- one hand */
 
-  newHand() {
+  /**
+   * Reopen the hand. The card chain is NEVER broken: after a bank the card you
+   * banked on stays on the table, and after a miss the card that beat you takes
+   * it (see takeRevealed). Only the pot and the streak move on.
+   *
+   * This used to deal a fresh card here. That swapped the card the player had
+   * just acted on in the same frame the pot zeroed, so the board looked like it
+   * had changed the subject — worst after a bank, where the card is the very
+   * reason you stopped.
+   *
+   * The caller has already zeroed the pot and streak, so this must not touch
+   * them: advance() calls this mid-hand, where the pot is very much live.
+   */
+  beginHand() {
     this.phase = 'awaiting';
-    this.streak = 0;
-    this.pot = 0;
-    this.revealed = null;
-    this.current = this.draw();
-
-    this.nextSlot.replaceChildren();
     this.potPanel.classList.remove('hl__pot--lost', 'hl__pot--banked');
     this.setPotCaption(this.lastCall ? 'last call' : 'on the table');
     this.refresh();
-
-    this.ctx.message('Call the next card. Left arrow for lower, right for higher.');
   },
 
   refresh() {
@@ -242,6 +262,11 @@ const game = {
     const ctx = this.ctx;
     const banked = this.pot;
 
+    // The clock has already set `settled`, and every beat now checks it, so
+    // nothing queued can reopen the hand after this point. Without that, a beat
+    // landing in the last second re-enabled the controls and anything built in
+    // that window was never settled — silently lost.
+    clearTimeout(this.beat);
     this.pot = 0;
     this.streak = 0;
     this.phase = 'settling';
@@ -325,20 +350,29 @@ const game = {
       : `${cardLabel(next)} \u2014 missed.${tail}`);
 
     this.beat = setTimeout(() => {
-      if (this.alive) this.newHand();
+      if (!this.alive || this.settled) return;
+      // The card that beat you takes the table — the chain carries on, only the
+      // pot is gone.
+      this.takeRevealed();
+      this.beginHand();
     }, BEAT_MS);
   },
 
-  /** A correct call or a push: the revealed card takes the table. */
-  advance() {
-    if (!this.alive) return;
-
+  /** The revealed card takes the table and becomes the base card. */
+  takeRevealed() {
     this.current = this.revealed || this.current;
     this.currentSlot.replaceChildren(this.nextSlot.firstElementChild);
     this.nextSlot.replaceChildren();
     this.revealed = null;
-    this.phase = 'awaiting';
-    this.refresh();
+  },
+
+  /** A correct call or a push: the chain continues and the hand stays open. */
+  advance() {
+    // A beat landing after the house has settled must not reopen the hand.
+    if (!this.alive || this.settled) return;
+
+    this.takeRevealed();
+    this.beginHand();
   },
 
   /* -------------------------------------------------------------- banking */
@@ -370,7 +404,9 @@ const game = {
       : `Banked ${banked}.`);
 
     this.beat = setTimeout(() => {
-      if (this.alive) this.newHand();
+      if (!this.alive || this.settled) return;
+      // Same card, fresh pot: banking collects, it does not redeal.
+      this.beginHand();
     }, BANK_MS);
   },
 };
