@@ -52,14 +52,18 @@ folder to any static host — no compilation, no dependencies.
 | Bug Hunt | Telegraph tactics | Hold a line of fire on it and slip the corners it cannot; bar the door it needs. One bite and the sector is over. | Bug Hunt |
 | Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
 
-Tables are grouped on the hub by category, defined in `CATEGORIES` in the same file. There are
-seven so far — **The Tavern**, **The Wilds**, **The Markets**, **The Night Watch**, **At Sea**,
-**The Grove**, and **The Derelict** — and adding another is a single entry.
+The hub shows one flat list — a compact row per table — because fifteen tables across seven
+wings is too many wings to spend a section heading and a blurb on each. A wing is a **label on
+the row** instead of a section, so the whole catalogue fits in about two screens on a phone.
+Wings are defined in `CATEGORIES` in the same file. There are seven so far — **The Tavern**,
+**The Wilds**, **The Markets**, **The Night Watch**, **At Sea**, **The Grove**, and **The
+Derelict** — and adding another is a single entry. Rows stay in `GAMES` registry order, which
+keeps each wing's tables together.
 
 ## Layout
 
 ```
-index.html              the tavern hub: every category, every table
+index.html              the tavern hub: one compact row per table
 games/play.html         shared game runner; select a table with ?game=<id>
 css/tokens.css          design tokens and base styles
 css/hub.css             hub chrome
@@ -144,6 +148,13 @@ shell.
   read — the `:hover` rules here are decoration — and a table may add a
   `@media (max-width: 440px)` step for the smallest screens. Nothing scrolls
   sideways.
+- **The hub is a menu, not a manual.** A hub row carries the wing label, the
+  title, one combined tagline-and-track line, and the score column. It does not
+  carry the rules: `config.rules` is read on the play page's start panel, and a
+  paragraph on every one of fifteen rows is what made the hub a long
+  unnavigable scroll. Rows are one per row on a phone, then two and three
+  columns at 620px and 960px — the column steps are explicit, not `auto-fill`,
+  so a phone is always a single column.
 - **Cues may not move.** `css/tokens.css` neutralises CSS animation and
   transition under `prefers-reduced-motion`, so a beat, pulse or flash has to be
   driven in JavaScript and needs a static fallback that still reads.

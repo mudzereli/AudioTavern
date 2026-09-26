@@ -137,7 +137,12 @@ export function mountShell(config, game) {
 
   const overlay = el('div', 'overlay');
 
-  root.append(top, hud, soundbar, stage, message, actionBar, overlay);
+  // Order matters, and the player row is deliberately last: between the HUD and
+  // the table it held ~70px of a phone screen, which pushed the clock away from
+  // the board it is read against. Below the table it is still reachable — and
+  // still in DOM order, so tabbing through stays honest — but it costs the game
+  // nothing. Do not move it back above the stage.
+  root.append(top, hud, stage, message, actionBar, soundbar, overlay);
 
   /* ------------------------------------------------------------------- run */
 
