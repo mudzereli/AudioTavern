@@ -193,7 +193,7 @@ export const GAMES = [
     accent: '#80a9a2',
     scoreLabel: 'signals held',
     rules:
-      'Watch four beacons flash a signal, then repeat it. Each clear adds a signal; one mistake sends you back to the opening pattern.',
+      'Watch four beacons flash a signal, then repeat it. Every clear adds a signal and quickens the relay, so the climb gets shorter and sharper as it goes. A missed beacon drops you halfway back, and a held watch pays its own length in points.',
     // The four beacon buttons are the action; no shell button is needed.
     actionLabel: null,
     track: {
@@ -227,7 +227,7 @@ export const GAMES = [
     accent: '#71b9b2',
     scoreLabel: 'salvage extracted',
     rules:
-      'Each expedition starts from a different skiff on a shifting sea chart. Strong salvage signals mean bigger caches. At each wreck, choose a quick haul of up to 2 cargo for 1 base strain, or strip the whole wreck for 3 base strain. Cargo adds strain to every action. Deliver to the skiff before the storm breaks; only delivered salvage scores.',
+      'Each expedition starts from a different skiff on a shifting sea chart, and the storm bears a different total of strain every time. Strong salvage signals mean bigger caches. At each wreck, choose a quick haul of up to 2 cargo for 1 base strain, or strip the whole wreck for 3 base strain. Cargo adds strain to every action. Deliver to the skiff before the storm breaks; only delivered salvage scores.',
     // The chart, Search, and Return controls are the actions; no shell button is needed.
     actionLabel: null,
     track: {

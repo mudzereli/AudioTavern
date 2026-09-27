@@ -2,12 +2,14 @@
    Ship Graveyard - plot a salvage run across a chart of drowned ships.
 
    Choose sea lanes, search wrecks, and manage rising storm strain before
-   returning cargo to the skiff. No two expeditions have the same route costs.
+   returning cargo to the skiff. No two expeditions have the same route costs,
+   and the storm bears a different total each time.
    --------------------------------------------------------------------------- */
 
 import { el } from '../dom.js';
 
-const MAX_STORM = 18;
+const STORM_MIN = 20;
+const STORM_MAX = 30;
 const BEAT_MS = 1050;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -36,6 +38,12 @@ function distanceBetween(first, second) {
   return Math.hypot(dx, dy);
 }
 
+/** Each expedition draws its own storm budget, so a run can be a short squall
+    or a long one. The readout and the meter both scale to whatever it drew. */
+function stormLimitFor(rng) {
+  return STORM_MIN + Math.floor(rng() * (STORM_MAX - STORM_MIN + 1));
+}
+
 const game = {
   id: 'ship-graveyard',
 
@@ -58,13 +66,13 @@ const game = {
     const storm = el('div', 'graveyard__storm');
     const stormHead = el('div', 'graveyard__storm-head');
     stormHead.append(el('span', 'graveyard__label', 'Storm strain'));
-    this.stormValue = el('span', 'graveyard__storm-value', `0 / ${MAX_STORM}`);
+    this.stormValue = el('span', 'graveyard__storm-value', `0 / ${STORM_MIN}\u2013${STORM_MAX}`);
     stormHead.append(this.stormValue);
     this.stormBar = el('div', 'graveyard__meter');
     this.stormBar.setAttribute('role', 'progressbar');
     this.stormBar.setAttribute('aria-label', 'Storm strain');
     this.stormBar.setAttribute('aria-valuemin', '0');
-    this.stormBar.setAttribute('aria-valuemax', String(MAX_STORM));
+    this.stormBar.setAttribute('aria-valuemax', String(STORM_MAX));
     this.stormFill = el('span', 'graveyard__meter-fill');
     this.stormBar.append(this.stormFill);
     storm.append(stormHead, this.stormBar);
@@ -163,6 +171,7 @@ const game = {
     this.position = this.startLocation;
     this.cargo = 0;
     this.storm = 0;
+    this.stormLimit = stormLimitFor(ctx.rng);
     this.searched = new Set();
     this.currentLanes = this.createRoutes(ctx.rng);
     this.caches = LOCATIONS.map((_, index) => index === this.startLocation
@@ -170,7 +179,7 @@ const game = {
       : (ctx.rng() < 0.3 ? 5 : 2) + Math.floor(ctx.rng() * 3));
 
     this.paint();
-    ctx.message(`Expedition ${this.expeditionNumber}: skiff position shifted. Choose a route and bring the cargo home.`);
+    ctx.message(`Expedition ${this.expeditionNumber}: skiff position shifted, and the storm will bear ${this.stormLimit} strain. Choose a route and bring the cargo home.`);
   },
 
   createRoutes(rng) {
@@ -267,11 +276,13 @@ const game = {
       riskTag.classList.toggle('graveyard__route-risk--rough', Boolean(isOpen) && currentCost >= 3);
     });
 
+    const limit = this.stormLimit ?? STORM_MIN;
     this.cargoValue.textContent = String(this.cargo);
-    this.stormValue.textContent = `${this.storm} / ${MAX_STORM}`;
+    this.stormValue.textContent = `${this.storm} / ${limit}`;
+    this.stormBar.setAttribute('aria-valuemax', String(limit));
     this.stormBar.setAttribute('aria-valuenow', String(this.storm));
-    this.stormFill.style.transform = `scaleX(${this.storm / MAX_STORM})`;
-    this.stormBar.classList.toggle('graveyard__meter--high', this.storm >= MAX_STORM * 0.66);
+    this.stormFill.style.transform = `scaleX(${this.storm / limit})`;
+    this.stormBar.classList.toggle('graveyard__meter--high', this.storm >= limit * 0.66);
     const atSkiff = this.position === this.startLocation;
     const canSearch = !this.locked;
     this.quickButton.disabled = !canSearch || atSkiff || this.searched.has(this.position);
@@ -290,7 +301,7 @@ const game = {
     } else if (!atSkiff && !this.searched.has(this.position)) {
       this.hint.textContent = `Wreck signal: ${this.caches[this.position] >= 5 ? 'strong' : 'faint'}, cache ${this.caches[this.position]}. Quick takes up to 2 (+1 strain); strip takes all (+3). Cargo adds strain.`;
     } else {
-      this.hint.textContent = 'Choose a numbered sea lane. S: quick haul. D: strip wreck. R: deliver at skiff. Cargo increases storm strain.';
+      this.hint.textContent = 'Choose a sea lane to travel. At a wreck, use Quick or Strip to search it; back at the skiff, use Return to bank the cargo. Cargo adds strain.';
     }
   },
 
@@ -318,12 +329,12 @@ const game = {
 
   advanceStorm(strain, message) {
     this.storm += strain;
-    if (this.storm >= MAX_STORM) {
+    if (this.storm >= this.stormLimit) {
       this.capsize();
       return;
     }
     this.paint();
-    this.ctx.message(`${message} Storm strain: ${this.storm} / ${MAX_STORM}.`);
+    this.ctx.message(`${message} Storm strain: ${this.storm} / ${this.stormLimit}.`);
   },
 
   extract() {

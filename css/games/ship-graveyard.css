@@ -134,11 +134,23 @@
 }
 
 .graveyard__route {
-  stroke: #3c5155;
-  stroke-width: 0.5;
-  stroke-dasharray: 0.9 1.8;
-  opacity: 0.3;
+  stroke: #4b666c;
+  stroke-width: 0.6;
+  stroke-dasharray: 1.1 2;
+  opacity: 0.42;
   transition: stroke 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+/* Stroke widths here are in viewBox units, so they scale with the chart. A phone
+   draws the chart about 310px wide instead of 520, which thins the same dash by
+   roughly 40% — and a low-opacity dash at 1.4px stops reading at all. Give the
+   chart furniture back the weight the scale takes away. Declared ahead of
+   --open so a passable lane keeps its own, brighter stroke. */
+@media (max-width: 640px) {
+  .graveyard__route {
+    stroke-width: 0.95;
+    opacity: 0.55;
+  }
 }
 
 /* A lane that does not exist on this chart is not drawn at all. */
