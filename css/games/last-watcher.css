@@ -1,4 +1,36 @@
 .watcher { width: min(440px, 100%); margin-inline: auto; display: grid; gap: 1rem; justify-items: center; }
+
+/* The same shape as Escape the Hold's readout, because it answers the same
+   question: what is this run doing right now? Signals is the climb, Deepest is
+   the run's record, Relay is how much faster the beacons have become. */
+.watcher__readout {
+  width: min(340px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.watcher__stat { display: grid; align-content: start; gap: 0.15rem; }
+
+.watcher__stat-label {
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.watcher__stat-value {
+  color: var(--ink);
+  font-family: var(--font-num);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.watcher__stat-value--hot { color: var(--accent); }
+.watcher__stat-value--quiet { color: var(--ink-2); font-size: 0.95rem; }
+
 .watcher__progress { min-height: 1.4rem; font-family: var(--font-num); font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .watcher__board { width: min(340px, 100%); aspect-ratio: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
 
