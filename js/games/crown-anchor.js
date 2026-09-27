@@ -4,8 +4,9 @@
   Roll five symbol dice, optionally reroll one, then collect a symbol that
   landed. Each unclaimed symbol's pot grows, making every roll a new decision.
 
-   The whole round is a single click, so the shell's action bar stays hidden and
-   the symbol buttons are the game.
+   The symbol buttons are the game and the shell's action bar stays hidden. The
+   dice are a control too — one may be rerolled — so the caption above them
+   names the reroll while it is live and retires once it is spent.
    --------------------------------------------------------------------------- */
 
 import { roll } from '../dice.js';
@@ -24,6 +25,9 @@ const START_POT = 3;
 const POT_GROWTH = 2;
 const DICE_COUNT = 5;
 const BEAT_MS = 1000;
+
+const REROLL_HINT = 'one reroll \u2014 tap a die';
+const COLLECT_HINT = 'choose a symbol to collect its pot';
 
 function renderSymbolDie(symbol, isHit, onReroll) {
   const die = document.createElement('button');
@@ -53,9 +57,9 @@ const game = {
     this.diceEl = document.createElement('div');
     this.diceEl.className = 'ca__dice';
 
-    const prompt = document.createElement('p');
-    prompt.className = 'cap';
-    prompt.textContent = 'choose a symbol from the roll';
+    this.promptEl = document.createElement('p');
+    this.promptEl.className = 'cap';
+    this.promptEl.textContent = COLLECT_HINT;
 
     this.symbolsEl = document.createElement('div');
     this.symbolsEl.className = 'ca__symbols';
@@ -79,7 +83,10 @@ const game = {
       return button;
     });
 
-    wrap.append(this.diceEl, prompt, this.symbolsEl);
+    // Above the dice, not below them: the caption has to read as belonging to
+    // the dice while it advertises the reroll, then retire to naming the row
+    // that is left to press.
+    wrap.append(this.promptEl, this.diceEl, this.symbolsEl);
     ctx.stage.append(wrap);
   },
 
@@ -104,6 +111,7 @@ const game = {
     this.rerollsRemaining = 1;
     this.renderDice(true);
     this.updatePots();
+    this.promptEl.textContent = REROLL_HINT;
 
     ctx.message('Collect a shown symbol, or click one die to reroll it once.');
   },
@@ -120,10 +128,12 @@ const game = {
     if (this.locked || !this.alive || this.rerollsRemaining === 0) return;
 
     this.rerollsRemaining = 0;
-    this.landed[index] = SYMBOLS[Math.floor(this.ctx.rng() * SYMBOLS.length)];
+    const current = SYMBOLS.indexOf(this.landed[index]);
+    this.landed[index] = SYMBOLS[(current + 1 + Math.floor(this.ctx.rng() * (SYMBOLS.length - 1))) % SYMBOLS.length];
     this.landedCounts = SYMBOLS.map((symbol) => this.landed.filter((face) => face.id === symbol.id).length);
     this.renderDice(false);
     this.updatePots();
+    this.promptEl.textContent = COLLECT_HINT;
     this.ctx.message('Reroll used. Choose one of the symbols shown to collect its pot.');
   },
 
@@ -155,6 +165,7 @@ const game = {
     this.locked = true;
     this.renderDice(false, called.id);
     this.updatePots();
+    this.promptEl.textContent = 'dice locked';
 
     let points = hits * pot;
     if (hits === DICE_COUNT) points += SWEEP_BONUS;
