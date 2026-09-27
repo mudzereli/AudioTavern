@@ -244,7 +244,7 @@ export const GAMES = [
     accent: '#a83b47',
     scoreLabel: 'grace earned',
     rules:
-      'Step in time while the orchestra plays: steps on the beat earn grace, clumsy steps break your streak without ending the danse. When the measure resolves the hall holds perfectly still, and a single step then is noticed by the host. Survive to bank your grace; a danse with no missteps raises your multiplier, which quickens the music, and being caught resets it to \u00d71 and slows the measure back down. When the music stops, so will your heart.',
+      'Step in time while the orchestra plays: every step on the beat is worth your multiplier in grace, and a beat you miss \u2014 clumsy or never taken \u2014 earns nothing. When the measure resolves the hall holds perfectly still, and a single step then is noticed by the host. Survive the hold to bank the danse\u2019s grace, and hit two beats in three to raise your multiplier by one; being caught costs one level. The orchestra quickens as your multiplier rises, and eases when it falls. When the music stops, so will your heart.',
     actionLabel: 'Step',
     track: {
       title: 'Danse de Vampyr',
