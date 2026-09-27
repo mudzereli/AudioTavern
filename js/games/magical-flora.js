@@ -5,8 +5,9 @@
    Plant a seed beside something already growing: a neighbour of the same plane
    pays 1, a neighbour of another plane pays 3, because the grove pays for
    difference. Ring a plot with four plants of at least three different planes
-   and it blooms, and a bloom is a stranger to every plane — a wildcard that
-   feeds every crossing after it.
+   and it blooms into a wild flower — a stranger to every plane, a wildcard that
+   feeds every crossing after it, keeping only the letter of the plane it grew
+   from.
 
    Nothing here fails. The pressure is scarcity: forty-nine plots against a hand
    of fourteen to twenty-four seeds, so the grove can never be filled and every
@@ -174,7 +175,7 @@ const game = {
     const hint = el(
       'p',
       'grove__hint',
-      'Pick a seed, then a lit plot. A same-plane neighbour pays 1, another plane pays 3. Ring a plot with four plants of three planes, or with four blooms, and it blooms — it keeps its colour, takes a gold ring, and reads as a stranger to every plane from then on. Thin soil on the border pays 2, but only the inner 5×5 can ever be ringed.',
+      'Pick a seed, then a lit plot. A same-plane neighbour pays 1, another plane pays 3. Ring a plot with four plants of three planes, or with four blooms, and it blooms — it turns into the wild flower and reads as a stranger to every plane from then on, keeping its letter so you can still see what it was. Thin soil on the border pays 2, but only the inner 5×5 can ever be ringed.',
     );
 
     wrap.append(rail, this.board, foot, hint);
@@ -566,13 +567,13 @@ const game = {
       const node = this.plots[index].el;
       const plant = this.plots[index].plant;
 
-      node.classList.toggle('grove__plot--bloom', Boolean(plant && plant.bloomed));
-
       if (plant) {
-        // The face is what was planted, so a bloom keeps its plane's colour,
-        // silhouette and letter. What the plot *reads as* is a separate fact,
-        // and the gold ring is what says so.
-        node.dataset.plane = plant.plane;
+        // A bloom turns into the flower it became: the wild colour and the round
+        // silhouette, with no ring around it. The letter stays the plane it grew
+        // from, so what the plot was and what it now reads as are still both on
+        // screen — colour and shape carry the wild reading, the letter carries
+        // the plane.
+        node.dataset.plane = plant.bloomed ? WILD : plant.plane;
         node.textContent = LETTERS[plant.plane];
         node.disabled = true;
         node.classList.remove('grove__plot--legal');

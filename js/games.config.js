@@ -277,7 +277,7 @@ export const GAMES = [
     accent: '#7cc36a',
     scoreLabel: 'flora grown',
     rules:
-      'Plant the seeds that drift in from the planes. A neighbour of the same plane pays 1, a neighbour of another plane pays 3. Ring a plot with four plants of at least three different planes — or with four blooms — and it blooms: it keeps its own colour and reads as a stranger to everything. The border is thin soil: a seed planted there pays 2 more, though only the inner plots can ever be ringed. The grove must stay joined, the hand must be spent or composted, and when the hand runs out the grove matures: a harvest, a wider plane mix, and every point of the next season worth the season number. An unfinished season is harvested at the bell.',
+      'Plant the seeds that drift in from the planes. A neighbour of the same plane pays 1, a neighbour of another plane pays 3. Ring a plot with four plants of at least three different planes — or with four blooms — and it blooms: it turns into a wild flower and reads as a stranger to everything. The border is thin soil: a seed planted there pays 2 more, though only the inner plots can ever be ringed. The grove must stay joined, the hand must be spent or composted, and when the hand runs out the grove matures: a harvest, a wider plane mix, and every point of the next season worth the season number. An unfinished season is harvested at the bell.',
     // The seed rail and the grove are the controls; the shell bar stays hidden.
     actionLabel: null,
     track: {

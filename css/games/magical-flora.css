@@ -3,9 +3,9 @@
 
    A rail of seed chips over a 7x7 bed. Every plane carries its own colour and
    its own silhouette, and each plot also holds its letter, so the bed can be
-   read without relying on colour alone. A bloom keeps the face it grew with and
-   takes a gold ring, because what a plot was and what it now reads as are two
-   different facts.
+   read without relying on colour alone. A bloom becomes the wild flower — the
+   gold colour and the round silhouette — and keeps its letter, so what a plot
+   was and what it now reads as are told on different channels.
 
    All state here is a static colour, border or ring change. Nothing pulses:
    tokens.css neutralises animation and transition under prefers-reduced-motion,
@@ -13,7 +13,7 @@
    --------------------------------------------------------------------------- */
 
 .grove {
-  /* The wild colour: a Mistflower seed, and the ring on anything that blooms. */
+  /* The wild colour: a Mistflower seed, and the face of anything that blooms. */
   --wild: #e3cf8a;
 
   width: 100%;
@@ -176,15 +176,6 @@
 .grove__plot[data-plane="gloam"] { background: #9a7ad0; border-radius: 12%; }
 .grove__plot[data-plane="aether"] { background: #6fd0c0; border-radius: 50% 12% 50% 12%; }
 .grove__plot[data-plane="wild"] { background: var(--wild); border-radius: 50%; }
-
-/* A bloom keeps the face it grew with, so the ring has to carry the wild reading
-   on its own. Gold rather than the table accent: the accent here is #7cc36a,
-   which would disappear into a verdant plot's #6fbf6a fill. */
-.grove__plot--bloom {
-  box-shadow:
-    0 0 0 2px var(--wild),
-    0 0 16px -4px color-mix(in srgb, var(--wild) 55%, transparent);
-}
 
 .grove--maturing .grove__plot {
   opacity: 0.7;

@@ -52,6 +52,15 @@ season pays the season number on everything.
   that changed the arithmetic had stopped saying what it was. The face now comes
   from `plant.plane` and the gold ring carries the wild reading, so both facts are
   on screen. `readingOf()` is untouched and still governs scoring and rings.
+- **A bloom becomes the flower, and the letter carries the plane**
+  (2026-09-27, reversing the entry above). The gold ring read as an outline
+  around a plot that otherwise looked unchanged, which is a thin reward for
+  closing a ring. `paintBoard()` now takes the face from the wild whenever
+  `plant.bloomed`, so a bloom *is* the gold round flower with no ring — and the
+  letter keeps the plane it grew from, which was the channel carrying "what it
+  was" in any case. Both facts stay on screen: colour and shape say wild, the
+  text says plane. Blooms and Mistflowers stay tellable apart, which the
+  four-blooms rule needs.
 - **Four blooms ring a plot too** (user, 2026-09-24). Every bloom reads as the
   same wild, so four of them around a plot made a set of one and could never
   satisfy `BLOOM_MIN_PLANES`: the shape that looks most obviously like a crossing
