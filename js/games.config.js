@@ -73,7 +73,7 @@ export const CATEGORIES = [
   {
     id: 'village',
     title: 'The Village',
-    blurb: 'A quiet shoreline, a familiar face, and time for one more cast.',
+    blurb: 'A quiet shoreline, a familiar face, and time enough for one more trip.',
   },
 ];
 
@@ -359,6 +359,22 @@ export const GAMES = [
     track: {
       title: 'Fishing Village',
       audioUrl: 'https://sounds.tabletopaudio.com/167_Fishing_Village.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'gift-cart',
+    title: 'The Gift Cart',
+    tagline: 'Pack the crate for the road home',
+    category: 'village',
+    accent: '#c2708a',
+    scoreLabel: 'points',
+    rules:
+      'Villagers bring gifts to the cart one at a time. Each parcel takes one to four squares of the crate, and a bigger parcel pays more — but the line is always longer than the crate, so choose what goes and click a parcel again to turn it until it fits. Set off whenever you like, and a crate filled to its very last square pays the whole trip a second time.',
+    actionLabel: 'Set off',
+    track: {
+      title: 'Homecoming',
+      audioUrl: 'https://sounds.tabletopaudio.com/397_Homecoming.mp3',
       soundUrl: SOUND_HOME,
     },
   },

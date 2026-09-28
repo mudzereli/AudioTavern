@@ -53,8 +53,9 @@ folder to any static host — no compilation, no dependencies.
 | Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
 | Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed rite brings a longer route. | Wizard's Tower |
 | Fishing Village | Catchbook fishing | Cast through shifting day, night, and weather; fill 18 fish slots for first-catch rewards. | Fishing Village |
+| The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. A crate filled to its last square pays the trip twice. | Homecoming |
 
-The hub shows one flat list — a compact row per table — because seventeen tables across nine
+The hub shows one flat list — a compact row per table — because eighteen tables across nine
 wings is too many wings to spend a section heading and a blurb on each. A wing is a **label on
 the row** instead of a section, so the whole catalogue fits in about two screens on a phone.
 Wings are defined in `CATEGORIES` in the same file. There are nine so far — **The Tavern**,
@@ -153,7 +154,7 @@ shell.
 - **The hub is a menu, not a manual.** A hub row carries the wing label, the
   title, one combined tagline-and-track line, and the score column. It does not
   carry the rules: `config.rules` is read on the play page's start panel, and a
-  paragraph on every one of seventeen rows is what made the hub a long
+  paragraph on every one of eighteen rows is what made the hub a long
   unnavigable scroll. Rows are one per row on a phone, then two and three
   columns at 620px and 960px — the column steps are explicit, not `auto-fill`,
   so a phone is always a single column.
