@@ -48,17 +48,18 @@ folder to any static host — no compilation, no dependencies.
 | Ship Graveyard | Salvage | Load cargo from the wrecks and get it back to the skiff before the storm. | Ship Graveyard |
 | Danse de Vampyr | Rhythm | Step on the beat, and hold perfectly still when the measure resolves. | Danse de Vampyr |
 | All Hallows' Eve | Judgement | Read the six signs at the door; the dead break exactly one of them. | All Hallows' Eve |
-| Magical Flora | Planar gardening | Plant seeds beside what is growing; another plane pays more than your own, and a ringed plot blooms into a wildcard. | Magical Flora |
+| Magical Flora | Planar gardening | Build a straight run of distinct kinds to bloom its middle; longer runs are needed as more planes arrive. | Magical Flora |
 | Bug Hunt | Telegraph tactics | Hold a line of fire on it and slip the corners it cannot; bar the door it needs. One bite and the sector is over. | Bug Hunt |
 | Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
+| Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed rite brings a longer route. | Wizard's Tower |
 
-The hub shows one flat list — a compact row per table — because fifteen tables across seven
+The hub shows one flat list — a compact row per table — because sixteen tables across eight
 wings is too many wings to spend a section heading and a blurb on each. A wing is a **label on
 the row** instead of a section, so the whole catalogue fits in about two screens on a phone.
-Wings are defined in `CATEGORIES` in the same file. There are seven so far — **The Tavern**,
+Wings are defined in `CATEGORIES` in the same file. There are eight so far — **The Tavern**,
 **The Wilds**, **The Markets**, **The Night Watch**, **At Sea**, **The Grove**, and **The
 Derelict** — and adding another is a single entry. Rows stay in `GAMES` registry order, which
-keeps each wing's tables together.
+keeps each wing's tables together. The Arcane is the newest wing.
 
 ## Layout
 
@@ -151,7 +152,7 @@ shell.
 - **The hub is a menu, not a manual.** A hub row carries the wing label, the
   title, one combined tagline-and-track line, and the score column. It does not
   carry the rules: `config.rules` is read on the play page's start panel, and a
-  paragraph on every one of fifteen rows is what made the hub a long
+  paragraph on every one of sixteen rows is what made the hub a long
   unnavigable scroll. Rows are one per row on a phone, then two and three
   columns at 620px and 960px — the column steps are explicit, not `auto-fill`,
   so a phone is always a single column.

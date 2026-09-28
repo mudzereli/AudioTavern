@@ -72,18 +72,14 @@ const TAKE_MS = 900;
 const RITE_MS = 1800;
 
 /**
- * The ladder. The night deepens one dial per verse and never two at once, so
- * every verse teaches exactly one new thing — and it deepens slowly, because a
- * step's price is what the whole economy is built on.
- *
- * Verses two to four are the long opening stretch: a step costs one, and the only
- * question is whether the light still reaches the beast. From verse five the rite
- * drinks two a step, so a log buys two steps instead of four.
+ * The ladder changes one dial at a time: the beast starts closing at verse two,
+ * dance cost rises at five and nine, and its tell widens at seven.
  */
 const LADDER = [
   { verse: 2, cost: DANCE_COST, tellMin: 1, tellMax: 1 },
   { verse: 5, cost: 2 },
   { verse: 7, tellMax: 2 },
+  { verse: 9, cost: 3 },
 ];
 
 /** Everything the night is doing to you at a given verse. */

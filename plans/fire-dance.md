@@ -74,9 +74,9 @@ the last ring is where it gets you.
   fire as they danced; the two cancelled out, so the opening verses had nothing to
   manage at all and the game was free until verse five. Both are gone: a step
   costs fire, a log gives it back, and the other two actions cost none.
-- **The ladder deepens the night one dial per verse**, never two at once, so each
-  verse teaches exactly one new thing: the fence goes live, then a step costs
-  double, then the beast reaches further, with the verses lengthening in between.
+- **The ladder deepens one dial at a time**: the fence goes live at verse two,
+  dance cost rises at five and nine, and the beast reaches further at seven, with
+  the verses lengthening in between.
 - **The woodpile is flat**: one to three logs, every trip, at every depth, for the
   same single level of light. One rule, one gamble, nothing to track.
 - **Turtling is left alone** (user's call). A player who hides and never dances
@@ -102,7 +102,7 @@ the last ring is where it gets you.
 | constant | value | meaning |
 | --- | --- | --- |
 | `FIRE_MAX` / `FIRE_START` | 8 / 4 | the light radius is the fire level |
-| `DANCE_COST` / `DANCE_SWING` | 1 (+ 1) / 1 | a step costs 1-2, or 2-3 from verse 5 |
+| `DANCE_COST` / `DANCE_SWING` | 1 (+ 1) / 1 | a step costs 1-2, 2-3 from verse 5, and 3-4 from verse 9 |
 | `FEED_GAIN` / `FEED_SWING` | 3 (+ 3) / 3 | a log gives back 3-6, rolled per turn |
 | `WOOD_START` / `WOOD_CAP` | 4 / 8 | logs |
 | `GATHER_MIN` / `GATHER_MAX` / `GATHER_COST` | 1 / 3 / 1 | a trip's yield, and what it costs the light |
@@ -137,6 +137,7 @@ ladder was retuned to fix.
 | 2 | it closes one ring, and the fence is live |
 | 5 | a step costs two, so a log buys two steps instead of four |
 | 7 | it closes one ring or two, and the tell starts to matter |
+| 9 | a step costs three or four fire, so the growing verses demand more fuel |
 
 Verse length is a separate, steadier clock: three steps through verse four, then
 a step longer every other verse, capped at `VERSE_MAX`.
@@ -161,9 +162,9 @@ drawing its own three actions and reading no clock at all.
   climbing.
 - The efficient line is to let it come close, because a close beast needs very
   little light to hold — and the last ring is where that stops being clever.
-- Dancing is never free: every step costs fire, one level or two early and two or
-  three from verse five, and the fire is the only thing holding the beast out. A log
-  gives back three to six — feeding is meant to feel like a rescue, not a chore.
+- Dancing is never free: each step costs fire, rising from one or two to two or
+  three at verse five and three or four at verse nine. A log gives back three to
+  six — feeding is meant to feel like a rescue, not a chore.
 - **The rolls are shown before you commit** (user's call, 2026-09-25: the fire
   should not be so predictable). The price of this step, the gift of this log and
   the beast's step are all rolled when the turn opens and printed on the buttons
@@ -193,10 +194,9 @@ drawing its own three actions and reading no clock at all.
   verses. If that ever matters, the dials are to keep the verse number across a
   wipe, or to score the steps danced rather than the verses completed.
 - **The pace of the ladder is the difficulty dial** (user's note, 2026-09-25: the
-  night scaled too fast, and feeding stopped being worth it). The burn rising to
-  two at verse five is the single biggest jump in the table, and the fix for a
-  treadmill of feeding is to move that rung later or to make a log bigger — never
-  to let a dance net zero, which solves the table.
+  night scaled too fast, and feeding stopped being worth it). The burn rises at
+  verses five and nine; if feeding becomes a treadmill, move a cost rung later or
+  make a log bigger — never let a dance net zero, which solves the table.
 - **Ship Graveyard overlap** is the gather trip: fetch, get back, clock running.
   It is kept apart by making the trip a single action and putting the score on the
   rite rather than the haul.

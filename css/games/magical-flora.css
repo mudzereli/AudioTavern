@@ -3,9 +3,8 @@
 
    A rail of seed chips over a 7x7 bed. Every plane carries its own colour and
    its own silhouette, and each plot also holds its letter, so the bed can be
-   read without relying on colour alone. A bloom becomes the wild flower — the
-   gold colour and the round silhouette — and keeps its letter, so what a plot
-   was and what it now reads as are told on different channels.
+  read without relying on colour alone. A bloom takes the gold colour and round
+  silhouette, while its letter and reading keep the plane it grew from.
 
    All state here is a static colour, border or ring change. Nothing pulses:
    tokens.css neutralises animation and transition under prefers-reduced-motion,
@@ -13,7 +12,7 @@
    --------------------------------------------------------------------------- */
 
 .grove {
-  /* The wild colour: a Mistflower seed, and the face of anything that blooms. */
+  /* Mistflower and the flowered state share a gold face, not a reading. */
   --wild: #e3cf8a;
 
   width: 100%;
@@ -94,36 +93,6 @@
 .grove__chip[data-plane="aether"] { --plane: #6fd0c0; }
 .grove__chip[data-plane="wild"] { --plane: var(--wild); }
 
-.grove__compost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.65rem;
-  font: inherit;
-  font-size: 0.8rem;
-  border: 1px dashed var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-2);
-  cursor: pointer;
-  transition: border-color 0.14s ease, color 0.14s ease;
-}
-
-.grove__compost:hover:not(:disabled) {
-  border-color: var(--bad);
-  color: var(--ink);
-}
-
-.grove__compost:disabled {
-  opacity: 0.32;
-  cursor: default;
-}
-
-.grove__compost-count {
-  font-family: var(--font-num);
-  color: var(--ink-3);
-}
-
 /* The bed ------------------------------------------------------------------ */
 
 .grove__board {
@@ -175,7 +144,8 @@
 .grove__plot[data-plane="tide"] { background: #5aa7d6; border-radius: 50% 50% 12% 12%; }
 .grove__plot[data-plane="gloam"] { background: #9a7ad0; border-radius: 12%; }
 .grove__plot[data-plane="aether"] { background: #6fd0c0; border-radius: 50% 12% 50% 12%; }
-.grove__plot[data-plane="wild"] { background: var(--wild); border-radius: 50%; }
+.grove__plot[data-plane="wild"],
+.grove__plot[data-plane="bloom"] { background: var(--wild); border-radius: 50%; }
 
 .grove--maturing .grove__plot {
   opacity: 0.7;

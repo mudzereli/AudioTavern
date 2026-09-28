@@ -65,6 +65,11 @@ export const CATEGORIES = [
     blurb:
       'A stopped station, a dead crew, and something aboard that can hear you. One bite and the hunt is over, and there is no help coming.',
   },
+  {
+    id: 'arcane',
+    title: 'The Arcane',
+    blurb: 'A welcoming tower, bright rituals, and runes waiting to be turned.',
+  },
 ];
 
 export const GAMES = [
@@ -277,7 +282,7 @@ export const GAMES = [
     accent: '#7cc36a',
     scoreLabel: 'flora grown',
     rules:
-      'Plant the seeds that drift in from the planes. A neighbour of the same plane pays 1, a neighbour of another plane pays 3. Ring a plot with four plants of at least three different planes — or with four blooms — and it blooms: it turns into a wild flower and reads as a stranger to everything. The border is thin soil: a seed planted there pays 2 more, though only the inner plots can ever be ringed. The grove must stay joined, the hand must be spent or composted, and when the hand runs out the grove matures: a harvest, a wider plane mix, and every point of the next season worth the season number. An unfinished season is harvested at the bell.',
+      'Plant beside the grove. Same-plane neighbours score 1; other planes score 3. Border plots add 2. Complete a straight horizontal or vertical run of distinct kinds to bloom its center: 3 kinds at first, then 4 and 5 as planes arrive. A planting can finish a line through older plants. Mistflower is wild; blooms keep their plane. Spend or compost your hand to harvest. The bell harvests an unfinished season.',
     // The seed rail and the grove are the controls; the shell bar stays hidden.
     actionLabel: null,
     track: {
@@ -294,7 +299,7 @@ export const GAMES = [
     accent: '#6b93a8',
     scoreLabel: 'confirmed kills',
     rules:
-      'Something is aboard, and the station is sixteen compartments. Your gun fires down your row or your column, so hold a lane rather than standing in its reach — and you can slip diagonally through the service hatches while it can only walk the corridors. If it reaches you the sector is over: what you earned is kept, and the hunt moves on. Two seals a sector bar a door when there is nowhere left to go, and the shot that empties its plates kills it before it lands. Every third sector a matriarch: plated while she has the armour for it, then open and relentless. The score is the body count — hits, clean fights and cleared sectors are worth nothing on their own, so only a dead creature counts.',
+      'Fire along your row or column; move through doors or diagonally through hatches. The creature uses doors only. Seals bar doors for two turns. Plating wastes shots, but a plate-breaking shot kills before it attacks. A bite costs the sector, not your confirmed kills. Every third sector brings a matriarch. Only kills score.',
     // Fire, seal and hold are the controls; the shell bar stays hidden.
     actionLabel: null,
     track: {
@@ -317,6 +322,22 @@ export const GAMES = [
     track: {
       title: 'Fire Dance',
       audioUrl: 'https://sounds.tabletopaudio.com/430_Fire_Dance.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'wizards-tower',
+    title: "Wizard's Tower",
+    tagline: 'Route the starlight',
+    category: 'arcane',
+    accent: '#4db99c',
+    scoreLabel: 'circuits',
+    rules: 'Rotate rune tiles to carry starlight from the tower to the altar. Complete circuits to score; each rite brings a longer route.',
+    // Rotate runes to route the light; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: "Wizard's Tower",
+      audioUrl: 'https://sounds.tabletopaudio.com/174_Wizards_Tower.mp3',
       soundUrl: SOUND_HOME,
     },
   },

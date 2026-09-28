@@ -7,9 +7,11 @@ A new table for the Tabletop Audio track `423_Magical_Flora.mp3`
 
 The planes keep sending seed through a 7×7 bed of plots. Plant a seed beside
 something already growing: a neighbour of the same plane pays 1, a neighbour of
-another plane pays 3, because the grove pays for difference. Ring a plot with
-four plants of at least three different planes and it blooms — a **wildcard that
-is a stranger to every plane**, so it feeds every crossing after it.
+another plane pays 3, because the grove pays for difference. A straight horizontal
+or vertical run of distinct kinds blooms its middle plant or plants. The run
+must match the number of planes sending seed that season: three, four, or five.
+A bloom keeps the plane it grew from; only Mistflower is wild. A new seed can
+complete a run through older plants; no ring or enclosure is needed.
 
 Nothing here fails. The pressure is scarcity: forty-nine plots against a hand of
 fourteen to twenty-four seeds, so the grove can never be filled and every seed is
@@ -34,47 +36,31 @@ season pays the season number on everything.
   crossing play clearly ahead of blobbing a bed.
 - **The grove must stay joined.** A seed needs an orthogonal neighbour, so the
   frontier is a decision and the bed's silhouette is the player's drawing.
-- **The border is thin soil** (2026-09-24, after a first play). A bloom needs four
-  sides, so all 24 border plots can never be ringed — the outer ring was dead
-  ground that could silently eat a perfect ring. It now pays `EDGE_BONUS` of 2 for
-  any seed planted on it, which gives the border a job: reliable points, weighed
-  against the bloom potential inside. The alternatives were letting an edge bloom
-  on three strictly-different planes (which inverts the economics, since
-  enclosing would cost three seeds instead of four) and making a border
-  Mistflower bloom on planting (which touches one seed a season). The hint line
-  says only the inner 5x5 can be ringed, so nobody builds a ring that cannot
-  fire.
-- **A bloom keeps the face it grew with** (fix, 2026-09-24, after a first play).
-  `paintBoard()` was reading `readingOf(plant)` — the scoring value — so a bloomed
-  Verdant turned into a gold `*`, pixel-identical to a Mistflower seed but for the
-  ring. The plane map died the moment a few blooms landed, and a plot's identity
-  was gone while its effect on its neighbours was not: the one thing on the board
-  that changed the arithmetic had stopped saying what it was. The face now comes
-  from `plant.plane` and the gold ring carries the wild reading, so both facts are
-  on screen. `readingOf()` is untouched and still governs scoring and rings.
-- **A bloom becomes the flower, and the letter carries the plane**
-  (2026-09-27, reversing the entry above). The gold ring read as an outline
-  around a plot that otherwise looked unchanged, which is a thin reward for
-  closing a ring. `paintBoard()` now takes the face from the wild whenever
-  `plant.bloomed`, so a bloom *is* the gold round flower with no ring — and the
-  letter keeps the plane it grew from, which was the channel carrying "what it
-  was" in any case. Both facts stay on screen: colour and shape say wild, the
-  text says plane. Blooms and Mistflowers stay tellable apart, which the
-  four-blooms rule needs.
-- **Four blooms ring a plot too** (user, 2026-09-24). Every bloom reads as the
-  same wild, so four of them around a plot made a set of one and could never
-  satisfy `BLOOM_MIN_PLANES`: the shape that looks most obviously like a crossing
-  was the one shape that could not bloom. `resolveBlooms()` now blooms a plot
-  whose four neighbours are all blooms, on top of the three-distinct-planes rule.
-  This is deliberately the narrow form — one wild does not substitute for a
-  missing plane, so the distinct rule keeps its teeth everywhere else.
-- **Blooms read as wild, permanently.** A bloomed plot is a stranger to every
-  plane, which is what makes ring-building worth the adjacency it costs. Blooms
-  are evaluated against the bed as it stood before the pass, so two plots can
-  bloom off the same placement.
+- **The border is thin soil** (2026-09-24, after a first play). The outer ring
+  pays `EDGE_BONUS` of 2 for any seed planted on it, giving the border a job:
+  reliable points, weighed against the extra points at central crossings.
+- **Blooms change state, not plane** (2026-09-27). A flower takes the gold face
+  and round silhouette, but its original plane continues to govern scoring and
+  bloom checks. Mistflower alone is wild; the letter and gold flower
+  distinguish a bloomed plant from a Mistflower.
+- **Blooms reward crossword runs, not enclosures** (2026-09-27). A bloom requires
+  a straight horizontal or vertical run of distinct kinds. Its middle plot
+  (or both middle plots for an even-length run) flowers. A placement checks only
+  runs containing the new seed, so it can bloom an older middle plot without
+  scanning unrelated parts of the board. No closed loop is needed.
+- **Run length follows the season's plane mix.** Three planes require a run of
+  three distinct kinds; four require four; five require five. Mistflower is one
+  distinct wild kind and can fill one place in a run.
+- **No special all-bloom ring rule.** Flowers keep their original planes, so they
+  count as those kinds in future runs. Bloom status changes the flower's face,
+  not its kind.
+- **Heritage keeps plane identity.** Up to three blooms from the previous season
+  return at random inner plots, apart from one another, and keep the planes they
+  grew from. This preserves the bloom rule across seasons without turning every
+  carried flower into a wildcard.
 - **One Mistflower, one compost** (user's calls). Tiny allowances, spent
-  deliberately: the wild completes a ring or rescues a frontier, the compost
-  answers a hand with a surplus of a plane.
+  deliberately: the wild supplies a distinct kind in a line or rescues a
+  frontier, the compost answers a hand with a surplus of a plane.
 - **Heritage is capped at three blooms** (user's call), placed on the inner bed
   and kept apart from each other so one anchor never counts twice. They are the
   literal reading of "the grove matures", and they guarantee the first seed of a
@@ -98,12 +84,12 @@ season pays the season number on everything.
 | Tide | T | `#5aa7d6` | season 1 |
 | Gloam | G | `#9a7ad0` | season 3 |
 | Aether | A | `#6fd0c0` | season 5 |
-| Mistflower | \* | `#e3cf8a` | wild, always a stranger |
+| Mistflower | \* | `#e3cf8a` | the only wild kind |
 
-A bloom is not a plane of its own. It keeps the face it grew with — colour,
-silhouette and letter — takes a gold ring, and reads as wild to everything around
-it. The ring is gold rather than the table accent because the accent here is
-`#7cc36a`, which would vanish into a verdant plot's `#6fbf6a` fill.
+A bloom is still its original plane for scoring and matching. Its gold flower face
+and round silhouette mark its state; its letter preserves the plane identity.
+Mistflower uses the same gold but remains the only wild kind. Gold is distinct
+from the table accent (`#7cc36a`), which would vanish into Verdant's `#6fbf6a` fill.
 
 `PLANES(season) = min(3 + floor((season - 1) / 2), 5)`. More planes make
 crossings easier and blooms harder at the same time, which is why the ramp is
@@ -119,7 +105,7 @@ gentle.
 | `PLANT_BASE` | 1 | a legal placement always pays something |
 | `SAME_POINT` / `CROSS_POINT` | 1 / 3 | orthogonal neighbours, same plane and another |
 | `EDGE_BONUS` | 2 | a seed planted on the border, where the soil runs thin |
-| `BLOOM_MIN_PLANES` | 3 | distinct planes among the four neighbours |
+| bloom run | 3 / 4 / 5 | distinct kinds in a straight run, matching the season's plane count |
 | `BLOOM_BASE` / `STEP` | 12 / +4 | each bloom in a season pays a little more |
 | `HARVEST_BASE` / `STEP` | 40 / +20 | the harvest when a hand runs out |
 | `HERITAGE_MAX` | 3 | blooms carried into the next season |
@@ -151,7 +137,7 @@ never paid twice.
 - `js/games.config.js` — the `grove` category and the `magical-flora` entry.
 - `js/games/magical-flora.js` — the table.
 - `css/games/magical-flora.css` — the rail, the bed, the plane silhouettes and
-  the bloom ring.
+  the flowered-state face.
 - `README.md` — the table row, the category list, and the keyboard note.
 
 No shared file changes: the table fits the existing contract with
@@ -162,8 +148,10 @@ No shared file changes: the table fits the existing contract with
 - Season length grows with the hand (14, 16, 18 … capped at 24), so a night that
   starts brisk slows down as the bed thickens. If late seasons drag, the cap or
   `HAND_STEP` is the knob.
-- Watch whether a dense single-plane bed (4–5 points a seed, no thinking) ever
-  competes with crossing play. The levers are `SAME_POINT` at 0, or requiring
-  four distinct planes to bloom.
-- Heritage blooms are placed by the generator, never chosen, which keeps a hot
-  season from handing the player a designed opening.
+- Watch whether season-length runs feel like a satisfying spatial plan, and
+  whether Mistflower makes early three-kind blooms too easy. If the bloom
+  chain is still too lucrative, tune `BLOOM_BASE` / `BLOOM_STEP` before changing
+  the run rule again.
+- Heritage blooms are placed by the generator, never chosen, but keep the planes
+  they grew from; this preserves identity without handing the player a designed
+  opening.
