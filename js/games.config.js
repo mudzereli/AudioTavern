@@ -353,7 +353,7 @@ export const GAMES = [
     category: 'village',
     accent: '#438f88',
     scoreLabel: 'points',
-    rules: 'Fish through day, night, clear, and rainy conditions. Each spot has six species, including a rare fish that changes with the weather and time. Your first catch of a species pays ten times its value; fill all 18 catchbook slots.',
+    rules: 'Each collection set randomly makes four of six fish available at each spot. Collect all 12 for 30 bonus points and a fresh set. A blocked-fish roll is an empty bite. First catches pay ten times their value across the run; repeats pay normal value.',
     // The spots are the controls; the shell bar stays hidden.
     actionLabel: null,
     track: {

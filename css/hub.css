@@ -58,11 +58,12 @@
 .table__link {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.9rem;
+  row-gap: 0.3rem;
   align-items: center;
-  gap: 0.9rem;
   position: relative;
   overflow: hidden;
-  padding: 0.85rem 1rem 0.85rem 1.2rem;
+  padding: 0.6rem 1rem 0.55rem 1.2rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
@@ -103,12 +104,26 @@
 }
 
 .table__sub {
-  margin-top: 0.2rem;
+  margin: 0.2rem 0 0;
   font-size: 0.8rem;
   color: var(--ink-3);
 }
 
+.table__theme {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
 .table__sub strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.table__theme strong {
   color: var(--ink-2);
   font-weight: 600;
 }

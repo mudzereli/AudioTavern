@@ -64,10 +64,12 @@ for (const game of GAMES) {
 
   main.append(el('h2', 'table__title', game.title));
 
-  // Tagline and track share one line; the rules live on the play page.
+  // The rules live on the play page; track attribution sits below the card row.
   const sub = el('p', 'table__sub');
-  sub.append(document.createTextNode(`${game.tagline} \u00b7 Themed after `));
-  sub.append(el('strong', null, game.track.title));
+  sub.textContent = game.tagline;
+
+  const theme = el('p', 'table__theme');
+  theme.append(document.createTextNode('Themed after '));
   main.append(sub);
 
   link.append(main);
@@ -89,6 +91,8 @@ for (const game of GAMES) {
   aside.append(cta);
 
   link.append(aside);
+  theme.append(el('strong', null, game.track.title));
+  link.append(theme);
   item.append(link);
   list.append(item);
 }

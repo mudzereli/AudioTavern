@@ -1,15 +1,22 @@
-import { el } from '../dom.js';
+import { el, svgEl } from '../dom.js';
 import { pick } from '../rng.js';
 
 const CAST_MS = 4000;
 const CAST_END_BUFFER_MS = 500;
+const SET_CELEBRATION_MS = 4000;
 const CONDITION_MS = 60_000;
-const STRAY_CATCH_CHANCE = 0.02;
+const COMMON_CHANCE = 0.4;
+const UNCOMMON_CHANCE = 0.2;
+const IN_SEASON_RARE_CHANCE = 0.18;
+const MATCHING_OFF_SEASON_RARE_CHANCE = 0.1;
+const MISMATCHED_OFF_SEASON_RARE_CHANCE = 0.02;
+const FISH_PER_SPOT = 4;
+const SET_BONUS = 100;
 const CONDITIONS = [
-  { id: 'day-clear', time: 'Day', weather: 'Clear', odds: [0.55, 0.3, 0.15] },
-  { id: 'day-rain', time: 'Day', weather: 'Rain', odds: [0.5, 0.3, 0.2] },
-  { id: 'night-rain', time: 'Night', weather: 'Rain', odds: [0.4, 0.3, 0.3] },
-  { id: 'night-clear', time: 'Night', weather: 'Clear', odds: [0.5, 0.3, 0.2] },
+  { id: 'day-clear', time: 'Day', weather: 'Clear' },
+  { id: 'day-rain', time: 'Day', weather: 'Rain' },
+  { id: 'night-rain', time: 'Night', weather: 'Rain' },
+  { id: 'night-clear', time: 'Night', weather: 'Clear' },
 ];
 const SPOTS = [
   {
@@ -58,6 +65,7 @@ const SPOTS = [
     },
   },
 ];
+const SET_SIZE = SPOTS.length * FISH_PER_SPOT;
 const ALL_FISH = SPOTS.flatMap((spot) => [
   spot.fish.common,
   spot.fish.uncommon,
@@ -69,19 +77,92 @@ function activeCondition(run) {
   return CONDITIONS[Math.floor(elapsed / CONDITION_MS) % CONDITIONS.length];
 }
 
-function catchFish(rng, spot, condition) {
-  const [commonOdds, uncommonOdds] = condition.odds;
-  const roll = rng();
-  if (roll < STRAY_CATCH_CHANCE) {
-    const strayFish = CONDITIONS
-      .filter((item) => item.id !== condition.id)
-      .map((item) => spot.fish.rare[item.id]);
-    return pick(rng, strayFish);
+function fishForSpot(spot) {
+  return [
+    spot.fish.common,
+    spot.fish.uncommon,
+    ...CONDITIONS.map((condition) => ({ ...spot.fish.rare[condition.id], condition: condition.id })),
+  ];
+}
+
+function strayRareWeights(condition) {
+  return CONDITIONS
+    .filter((item) => item.id !== condition.id)
+    .map((item) => ({
+      id: item.id,
+      weight: item.time === condition.time || item.weather === condition.weather
+        ? MATCHING_OFF_SEASON_RARE_CHANCE
+        : MISMATCHED_OFF_SEASON_RARE_CHANCE,
+    }));
+}
+
+function strayRareChance(species, condition) {
+  const weights = strayRareWeights(condition);
+  return weights.find((item) => item.id === species.condition)?.weight || 0;
+}
+
+function pickStrayRare(rng, spot, condition) {
+  const weights = strayRareWeights(condition);
+  const totalWeight = weights.reduce((total, item) => total + item.weight, 0);
+  let roll = rng() * totalWeight;
+  for (const item of weights) {
+    roll -= item.weight;
+    if (roll < 0) return spot.fish.rare[item.id];
   }
-  const catchRoll = (roll - STRAY_CATCH_CHANCE) / (1 - STRAY_CATCH_CHANCE);
-  if (catchRoll < commonOdds) return spot.fish.common;
-  if (catchRoll < commonOdds + uncommonOdds) return spot.fish.uncommon;
-  return spot.fish.rare[condition.id];
+  return spot.fish.rare[weights[weights.length - 1].id];
+}
+
+function catchFish(rng, spot, condition, available) {
+  const roll = rng();
+  if (roll < COMMON_CHANCE) {
+    const fish = spot.fish.common;
+    return available.has(fish.id) ? fish : null;
+  }
+  if (roll < COMMON_CHANCE + UNCOMMON_CHANCE) {
+    const fish = spot.fish.uncommon;
+    return available.has(fish.id) ? fish : null;
+  }
+  if (roll < COMMON_CHANCE + UNCOMMON_CHANCE + IN_SEASON_RARE_CHANCE) {
+    const fish = spot.fish.rare[condition.id];
+    return available.has(fish.id) ? fish : null;
+  }
+  const fish = pickStrayRare(rng, spot, condition);
+  return available.has(fish.id) ? fish : null;
+}
+
+function catchChance(species, condition) {
+  if (species.rarity === 'Rare' && species.condition !== condition.id) {
+    return strayRareChance(species, condition);
+  }
+  if (species.rarity === 'Rare') return IN_SEASON_RARE_CHANCE;
+  return species.rarity === 'Common' ? COMMON_CHANCE : UNCOMMON_CHANCE;
+}
+
+function catchChanceLabel(species, condition) {
+  const chance = formatPercent(catchChance(species, condition));
+  if (species.rarity === 'Rare' && species.condition !== condition.id) {
+    const match = strayRareWeights(condition).find((item) => item.id === species.condition)?.weight
+      === MATCHING_OFF_SEASON_RARE_CHANCE;
+    return `Rare · ${chance} ${match ? 'match' : 'off-season'}`;
+  }
+  return `${species.rarity} · ${chance}`;
+}
+
+function noBiteChance(spot, condition, available) {
+  const normalFish = [spot.fish.common, spot.fish.uncommon, spot.fish.rare[condition.id]];
+  const normalOdds = [COMMON_CHANCE, UNCOMMON_CHANCE, IN_SEASON_RARE_CHANCE];
+  const normalMiss = normalFish.reduce((miss, fish, index) => (
+    miss + (available.has(fish.id) ? 0 : normalOdds[index])
+  ), 0);
+  const weights = strayRareWeights(condition);
+  const strayMiss = weights.reduce((miss, item) => (
+    miss + (available.has(spot.fish.rare[item.id].id) ? 0 : item.weight)
+  ), 0);
+  return normalMiss + strayMiss;
+}
+
+function formatPercent(probability) {
+  return `${(probability * 100).toFixed(1).replace(/\.0$/, '')}%`;
 }
 
 const game = {
@@ -95,21 +176,20 @@ const game = {
 
     const header = el('div', 'fishing__header');
     this.conditionLabel = el('strong', 'fishing__condition-label');
-    this.conditionOdds = el('span', 'fishing__condition-odds');
     this.condition = el('div', 'fishing__condition');
-    this.condition.append(this.conditionLabel, this.conditionOdds);
+    this.condition.append(this.conditionLabel);
 
     const tallies = el('div', 'fishing__tallies');
     this.status = el('p', 'fishing__status');
     this.rareStatus = el('p', 'fishing__rare-count', 'Rare: 0');
     const book = el('div', 'fishing__book');
-    this.bookStatus = el('p', 'fishing__book-count', '0 / 18 found');
+    this.bookStatus = el('p', 'fishing__book-count', 'Set 1 · 0 / 12');
     this.bookProgress = el('div', 'fishing__book-progress');
     this.bookProgress.setAttribute('role', 'progressbar');
-    this.bookProgress.setAttribute('aria-label', 'Catchbook species found');
+    this.bookProgress.setAttribute('aria-label', 'Current collection set');
     this.bookProgress.setAttribute('aria-valuemin', '0');
-    this.bookProgress.setAttribute('aria-valuemax', String(ALL_FISH.length));
-    this.bookSlots = Array.from({ length: ALL_FISH.length }, () => {
+    this.bookProgress.setAttribute('aria-valuemax', String(SET_SIZE));
+    this.bookSlots = Array.from({ length: SET_SIZE }, () => {
       const slot = el('i', 'fishing__book-mark');
       this.bookProgress.append(slot);
       return slot;
@@ -118,8 +198,18 @@ const game = {
     tallies.append(this.status, this.rareStatus, book);
     header.append(this.condition, tallies);
 
-    this.float = el('p', 'fishing__float', 'Choose a spot');
+    this.float = el('div', 'fishing__float');
     this.float.setAttribute('role', 'status');
+    this.floatLabel = el('span', 'fishing__float-label', 'Choose a spot');
+    this.ripple = el('span', 'fishing__ripple');
+    this.ripple.setAttribute('aria-hidden', 'true');
+    this.float.append(this.floatLabel, this.ripple);
+    this.setWin = el('div', 'fishing__set-win');
+    this.setWin.setAttribute('role', 'status');
+    this.setWinTitle = el('strong', 'fishing__set-win-title');
+    this.setWinPoints = el('span', 'fishing__set-win-points');
+    this.setWin.append(this.setWinTitle, this.setWinPoints);
+    this.setWin.hidden = true;
     this.spots = el('div', 'fishing__spots');
     this.spots.setAttribute('role', 'group');
     this.spots.setAttribute('aria-label', 'Fishing spots and catchbook entries');
@@ -128,32 +218,34 @@ const game = {
       const button = el('button', 'fishing__spot');
       button.type = 'button';
       button.classList.add(`fishing__spot--${spot.id}`);
-      button.append(
-        el('span', 'fishing__spot-name', spot.name),
-        el('span', 'fishing__clue', spot.clue),
-      );
+      const heading = el('span', 'fishing__spot-heading');
+      const name = el('span', 'fishing__spot-name', spot.name);
+      const progress = el('span', 'fishing__spot-progress', '0 / 4');
+      const noBite = el('span', 'fishing__no-bite');
+      heading.append(name, progress, noBite);
+      button.append(heading, el('span', 'fishing__clue', spot.clue));
       const pool = el('span', 'fishing__pool');
-      const fish = [spot.fish.common, spot.fish.uncommon, ...CONDITIONS.map((item) => ({ ...spot.fish.rare[item.id], condition: item.id }))];
-      const entries = fish.map((species) => {
+      const entries = fishForSpot(spot).map((species) => {
         const entry = el('span', 'fishing__species');
-        const slot = el('span', 'fishing__slot');
-        slot.setAttribute('aria-hidden', 'true');
+        const art = svgEl('svg', { viewBox: '0 0 64 40', 'aria-hidden': 'true', focusable: 'false' });
+        art.classList.add('fishing__fish-art');
+        art.append(svgEl('use', { href: `../assets/img/fishing-village-fish.svg#fish-${species.id}` }));
         const details = el('span', 'fishing__species-details');
         const name = el('span', 'fishing__fish-name', species.name);
         const odds = el('span', 'fishing__species-odds');
         const count = el('span', 'fishing__species-count', '0');
         details.append(name, odds);
-        entry.append(slot, details, count);
+        entry.append(art, details, count);
         pool.append(entry);
-        return { species, entry, slot, odds, count };
+        return { species, entry, name, odds, count };
       });
       button.append(pool);
       button.addEventListener('click', () => this.cast(spot));
       this.spots.append(button);
-      this.spotViews.push({ spot, button, entries });
+      this.spotViews.push({ spot, button, entries, progress, noBite });
       return button;
     });
-    this.wrap.append(header, this.float, this.spots);
+    this.wrap.append(header, this.setWin, this.float, this.spots);
     ctx.stage.append(this.wrap);
     this.visibilityHandler = () => this.handleVisibility();
   },
@@ -162,17 +254,24 @@ const game = {
     this.ctx = ctx;
     clearTimeout(this.castTimer);
     clearTimeout(this.conditionTimer);
+    clearTimeout(this.setCompleteTimer);
+    this.setCompleteTimer = null;
     document.removeEventListener('visibilitychange', this.visibilityHandler);
     document.addEventListener('visibilitychange', this.visibilityHandler);
     this.alive = true;
     this.phase = 'ready';
     this.casts = 0;
+    this.bites = 0;
+    this.noBites = 0;
     this.rareCatches = 0;
     this.fishCounts = new Map(ALL_FISH.map((fish) => [fish.id, 0]));
-    this.found = 0;
+    this.setNumber = 0;
+    this.newSet();
+    this.setCompleteRemaining = SET_CELEBRATION_MS;
+    this.setWin.hidden = true;
     this.lastCaughtId = null;
     this.currentSpot = null;
-    this.float.textContent = 'Choose a spot';
+    this.floatLabel.textContent = 'Choose a spot';
     this.float.className = 'fishing__float';
     this.paint();
     this.scheduleConditionUpdate();
@@ -183,12 +282,34 @@ const game = {
     this.phase = 'stopped';
     clearTimeout(this.castTimer);
     clearTimeout(this.conditionTimer);
+    clearTimeout(this.setCompleteTimer);
     this.castTimer = null;
     this.conditionTimer = null;
+    this.setCompleteTimer = null;
     document.removeEventListener('visibilitychange', this.visibilityHandler);
-    this.float.textContent = 'The line comes in as the day ends.';
+    this.setWin.hidden = true;
+    this.floatLabel.textContent = 'The line comes in as the day ends.';
     this.float.classList.remove('fishing__float--casting');
     this.paint();
+  },
+
+  newSet() {
+    this.setNumber += 1;
+    this.setFound = new Set();
+    this.pools = new Map();
+    for (const spot of SPOTS) {
+      const remaining = fishForSpot(spot);
+      const available = new Set();
+      for (let count = 0; count < FISH_PER_SPOT; count += 1) {
+        const fish = pick(this.ctx.rng, remaining);
+        available.add(fish.id);
+        remaining.splice(remaining.indexOf(fish), 1);
+      }
+      this.pools.set(spot.id, available);
+    }
+    this.activeSpecies = SPOTS.flatMap((spot) => (
+      fishForSpot(spot).filter((fish) => this.pools.get(spot.id).has(fish.id))
+    ));
   },
 
   scheduleConditionUpdate() {
@@ -213,7 +334,7 @@ const game = {
     this.currentSpot = spot;
     this.castRemaining = CAST_MS;
     this.float.className = 'fishing__float fishing__float--casting';
-    this.float.textContent = 'Casting...';
+    this.floatLabel.textContent = 'Line out. The float drifts...';
     this.ctx.message('Line out.');
     this.paint();
     this.beginCastWait();
@@ -227,12 +348,35 @@ const game = {
     }, this.castRemaining);
   },
 
+  beginSetCelebration() {
+    if (!this.alive || this.phase !== 'set-complete' || document.hidden || this.ctx.run.state !== 'running') return;
+    this.setCompleteStartedAt = performance.now();
+    this.setCompleteTimer = setTimeout(() => {
+      this.setCompleteTimer = null;
+      if (!this.alive || this.phase !== 'set-complete') return;
+      if (document.hidden || this.ctx.run.state !== 'running') return;
+      this.phase = 'ready';
+      this.setWin.hidden = true;
+      this.lastCaughtId = null;
+      this.newSet();
+      this.floatLabel.textContent = `Set ${this.setNumber} · Choose a spot`;
+      this.float.className = 'fishing__float';
+      this.paint();
+      this.scheduleConditionUpdate();
+    }, this.setCompleteRemaining);
+  },
+
   handleVisibility() {
     if (document.hidden) {
       if (this.phase === 'casting' && this.castTimer !== null) {
         this.castRemaining = Math.max(0, this.castRemaining - (performance.now() - this.castStartedAt));
         clearTimeout(this.castTimer);
         this.castTimer = null;
+      }
+      if (this.phase === 'set-complete' && this.setCompleteTimer !== null) {
+        this.setCompleteRemaining = Math.max(0, this.setCompleteRemaining - (performance.now() - this.setCompleteStartedAt));
+        clearTimeout(this.setCompleteTimer);
+        this.setCompleteTimer = null;
       }
       clearTimeout(this.conditionTimer);
       this.conditionTimer = null;
@@ -242,6 +386,7 @@ const game = {
     setTimeout(() => {
       if (!this.alive) return;
       if (this.phase === 'casting' && this.castTimer === null && this.ctx.run.state === 'running') this.beginCastWait();
+      if (this.phase === 'set-complete' && this.setCompleteTimer === null) this.beginSetCelebration();
       this.paint();
       this.scheduleConditionUpdate();
     }, 0);
@@ -253,63 +398,93 @@ const game = {
       this.castRemaining = 0;
       return;
     }
-    const fish = catchFish(this.ctx.rng, this.currentSpot, activeCondition(this.ctx.run));
+    const spot = this.currentSpot;
+    const condition = activeCondition(this.ctx.run);
+    const fish = catchFish(this.ctx.rng, spot, condition, this.pools.get(spot.id));
+    this.phase = 'ready';
+    this.casts += 1;
+    this.currentSpot = null;
+    if (!fish) {
+      this.noBites += 1;
+      this.floatLabel.textContent = 'No bite this time.';
+      this.float.className = 'fishing__float fishing__float--miss';
+      this.ctx.message(this.floatLabel.textContent);
+      this.paint();
+      this.scheduleConditionUpdate();
+      return;
+    }
     const firstCatch = this.fishCounts.get(fish.id) === 0;
     const points = fish.value * (firstCatch ? 10 : 1);
     const rare = fish.rarity === 'Rare';
-    this.phase = 'ready';
-    this.casts += 1;
+    this.bites += 1;
     this.fishCounts.set(fish.id, this.fishCounts.get(fish.id) + 1);
-    if (firstCatch) this.found += 1;
+    this.setFound.add(fish.id);
     if (rare) this.rareCatches += 1;
     this.ctx.addPoints(points);
-    this.float.textContent = `${rare ? 'Rare: ' : ''}${fish.name} +${points}${firstCatch ? ' · New' : ''}`;
+    const discovery = firstCatch ? ' · New this run' : ' · Repeat';
+    let result = `${rare ? 'Rare: ' : ''}${fish.name} +${points}${discovery}`;
+    if (this.setFound.size === SET_SIZE) {
+      this.ctx.addPoints(SET_BONUS);
+      result += ` · Collection set complete +${SET_BONUS} bonus`;
+      this.phase = 'set-complete';
+      this.setCompleteRemaining = SET_CELEBRATION_MS;
+      this.setWinTitle.textContent = `Set ${this.setNumber} complete`;
+      this.setWinPoints.textContent = `${SET_SIZE} fish collected · +${SET_BONUS} points`;
+      this.setWin.hidden = false;
+      this.beginSetCelebration();
+    }
+    this.floatLabel.textContent = result;
     this.float.className = 'fishing__float fishing__float--caught';
     if (rare) this.float.classList.add('fishing__float--rare');
     if (firstCatch) this.float.classList.add('fishing__float--discovery');
-    this.ctx.message(this.float.textContent);
+    if (this.phase === 'set-complete') this.float.classList.add('fishing__float--complete');
+    this.ctx.message(result);
     this.lastCaughtId = fish.id;
-    this.currentSpot = null;
     this.paint();
     this.scheduleConditionUpdate();
   },
 
   paint() {
     if (!this.spotButtons) return;
-    this.status.textContent = `Fish caught: ${this.casts}`;
+    this.status.textContent = `${this.bites} landed · ${this.noBites} empty`;
     this.rareStatus.textContent = `Rare: ${this.rareCatches}`;
-    this.bookStatus.textContent = `${this.found} / ${ALL_FISH.length} found`;
-    this.bookProgress.setAttribute('aria-valuenow', String(this.found));
-    this.bookSlots.forEach((slot, index) => slot.classList.toggle('fishing__book-mark--found', index < this.found));
+    this.bookStatus.textContent = `Set ${this.setNumber} · ${this.setFound.size} / ${SET_SIZE}`;
+    this.bookProgress.setAttribute('aria-valuenow', String(this.setFound.size));
+    this.bookSlots.forEach((slot, index) => (
+      slot.classList.toggle('fishing__book-mark--found', this.setFound.has(this.activeSpecies[index].id))
+    ));
     const condition = activeCondition(this.ctx.run);
     this.conditionLabel.textContent = `${condition.time} · ${condition.weather}`;
     this.condition.className = `fishing__condition fishing__condition--${condition.id}`;
-    this.conditionOdds.textContent = `${condition.odds.map((odds) => Math.round(odds * 100)).join('/')}% mix · ${Math.round(STRAY_CATCH_CHANCE * 100)}% stray`;
     const canCast = this.alive && this.phase === 'ready'
       && this.ctx.run.state === 'running'
       && this.ctx.run.remainingMs > CAST_MS + CAST_END_BUFFER_MS;
     this.spots.classList.toggle('fishing__spots--casting', this.phase === 'casting');
-    for (const { spot, button, entries } of this.spotViews) {
+    for (const { spot, button, entries, progress, noBite } of this.spotViews) {
+      const available = this.pools.get(spot.id);
+      noBite.textContent = `No bite ${formatPercent(noBiteChance(spot, condition, available))}`;
       const castingHere = this.phase === 'casting' && spot === this.currentSpot;
       button.classList.toggle('fishing__spot--casting', castingHere);
       button.disabled = !canCast;
       const readableFish = [];
-      for (const { species, entry, slot, odds, count } of entries) {
-        const caught = this.fishCounts.get(species.id) || 0;
-        const available = species.rarity !== 'Rare' || species.condition === condition.id;
-        const rarityIndex = species.rarity === 'Common' ? 0 : species.rarity === 'Uncommon' ? 1 : 2;
-        entry.classList.toggle('fishing__species--caught', caught > 0);
-        entry.classList.toggle('fishing__species--last-catch', species.id === this.lastCaughtId);
-        entry.classList.toggle('fishing__species--inactive', !available);
-        entry.classList.toggle('fishing__species--active-rare', species.rarity === 'Rare' && available);
-        slot.textContent = '';
-        count.textContent = String(caught);
-        odds.textContent = available
-          ? `${species.rarity} · ${Math.round(condition.odds[rarityIndex] * 100)}%`
-          : `Rare · ${CONDITIONS.find((item) => item.id === species.condition).time} ${CONDITIONS.find((item) => item.id === species.condition).weather}`;
-        readableFish.push(`${species.rarity} ${species.name}, ${caught} caught, ${available ? `${Math.round(condition.odds[rarityIndex] * 100)} percent chance` : `available during ${species.condition.replace('-', ' ')}`}`);
+      let foundHere = 0;
+      for (const { species, entry, name, odds, count } of entries) {
+        const isAvailable = available.has(species.id);
+        const caught = this.setFound.has(species.id);
+        const runCount = this.fishCounts.get(species.id) || 0;
+        entry.hidden = !isAvailable;
+        entry.classList.toggle('fishing__species--caught', caught);
+        entry.classList.toggle('fishing__species--last-catch', isAvailable && species.id === this.lastCaughtId);
+        name.textContent = isAvailable ? species.name : '';
+        odds.textContent = isAvailable ? catchChanceLabel(species, condition) : '';
+        count.textContent = isAvailable ? String(runCount) : '';
+        if (isAvailable) {
+          if (caught) foundHere += 1;
+          readableFish.push(`${species.rarity} ${species.name}, ${caught ? 'collected this set' : 'not yet collected'}, ${runCount} caught this run, ${catchChanceLabel(species, condition)} chance`);
+        }
       }
-      button.setAttribute('aria-label', `${spot.name}. ${spot.clue} Cast here. Catchbook: ${readableFish.join('; ')}.`);
+      progress.textContent = `${foundHere} / ${FISH_PER_SPOT}`;
+      button.setAttribute('aria-label', `${spot.name}. ${spot.clue} ${noBite.textContent}. Four species available; ${readableFish.join('; ')}. Cast here.`);
     }
   },
 };
