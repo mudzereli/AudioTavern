@@ -70,6 +70,11 @@ export const CATEGORIES = [
     title: 'The Arcane',
     blurb: 'A welcoming tower, bright rituals, and runes waiting to be turned.',
   },
+  {
+    id: 'village',
+    title: 'The Village',
+    blurb: 'A quiet shoreline, a familiar face, and time for one more cast.',
+  },
 ];
 
 export const GAMES = [
@@ -338,6 +343,22 @@ export const GAMES = [
     track: {
       title: "Wizard's Tower",
       audioUrl: 'https://sounds.tabletopaudio.com/174_Wizards_Tower.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
+  {
+    id: 'fishing-village',
+    title: 'Fishing Village',
+    tagline: 'Cast along the shore',
+    category: 'village',
+    accent: '#438f88',
+    scoreLabel: 'points',
+    rules: 'Fish through day, night, clear, and rainy conditions. Each spot has six species, including a rare fish that changes with the weather and time. Your first catch of a species pays ten times its value; fill all 18 catchbook slots.',
+    // The spots are the controls; the shell bar stays hidden.
+    actionLabel: null,
+    track: {
+      title: 'Fishing Village',
+      audioUrl: 'https://sounds.tabletopaudio.com/167_Fishing_Village.mp3',
       soundUrl: SOUND_HOME,
     },
   },

@@ -1,0 +1,267 @@
+.fishing {
+  --fishing-water: #4c9b9a;
+  width: min(560px, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.fishing__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 1.3fr);
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.fishing__condition {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--fishing-water) 48%, var(--line));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fishing-water) 10%, var(--panel));
+}
+
+.fishing__condition--day-rain { --fishing-water: #608f9e; }
+.fishing__condition--night-rain { --fishing-water: #627f91; }
+.fishing__condition--night-clear { --fishing-water: #98799c; }
+
+.fishing__condition-label {
+  color: var(--fishing-water);
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.fishing__condition-odds {
+  color: var(--ink-2);
+  font-family: var(--font-num);
+  font-size: 0.61rem;
+}
+
+.fishing__tallies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.25rem 0.55rem;
+  text-align: right;
+}
+
+.fishing__status,
+.fishing__rare-count,
+.fishing__book-count {
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+}
+
+.fishing__rare-count { color: #997126; }
+.fishing__book { grid-column: 1 / -1; display: grid; gap: 0.18rem; }
+.fishing__book-count { color: var(--ink); font-weight: 700; }
+
+.fishing__book-progress {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  gap: 2px;
+  height: 5px;
+}
+
+.fishing__book-mark {
+  display: block;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.fishing__book-mark--found { background: var(--accent); }
+
+.fishing__spots {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fishing__float {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fishing-water) 7%, var(--panel-2));
+  color: var(--ink-3);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fishing__float--casting {
+  border-color: var(--fishing-water);
+  border-style: solid;
+  color: var(--ink-2);
+}
+
+.fishing__float--caught {
+  border-style: solid;
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.fishing__float--discovery { border-width: 2px; }
+
+.fishing__float--rare {
+  min-height: 2.6rem;
+  padding: 0.45rem;
+  border-color: #c8a34e;
+  background: color-mix(in srgb, #e6ca7a 25%, var(--panel-2));
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.fishing__spot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--fishing-water);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fishing__spot--reeds { --fishing-water: #76a76d; }
+.fishing__spot--breakwater { --fishing-water: #6592ad; }
+
+.fishing__spot:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--fishing-water) 8%, var(--panel-2));
+}
+
+.fishing__spot:disabled { cursor: default; }
+.fishing__spots--casting .fishing__spot:disabled:not(.fishing__spot--casting) { opacity: 0.55; }
+
+.fishing__spot--casting {
+  border-color: var(--fishing-water);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--fishing-water);
+}
+
+.fishing__spot-name {
+  color: var(--fishing-water);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.fishing__clue {
+  grid-column: 1;
+  color: var(--ink-2);
+  font-size: 0.76rem;
+}
+
+.fishing__pool {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.18rem 0.3rem;
+  min-width: 0;
+}
+
+.fishing__species {
+  display: grid;
+  grid-template-columns: 0.7rem minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 0.3rem;
+  min-width: 0;
+  padding: 0.14rem 0.25rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+}
+
+.fishing__species--caught { border-color: var(--line); }
+.fishing__species--last-catch { border-color: var(--accent); background: var(--accent-soft); }
+.fishing__species--inactive { opacity: 0.5; }
+.fishing__species--caught.fishing__species--inactive { opacity: 0.78; }
+.fishing__species--active-rare { border-color: color-mix(in srgb, #c6a754 48%, var(--line)); }
+
+.fishing__slot {
+  grid-row: 1 / span 2;
+  width: 0.62rem;
+  aspect-ratio: 1;
+  border: 1px solid var(--ink-2);
+  border-radius: 50%;
+}
+
+.fishing__species--caught .fishing__slot {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--panel-2);
+}
+
+.fishing__species--last-catch .fishing__slot { border-color: var(--accent); background: var(--accent); }
+
+.fishing__species-details {
+  display: grid;
+  min-width: 0;
+}
+
+.fishing__fish-name {
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 0.69rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fishing__species-odds {
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 0.61rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fishing__species-count {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  min-width: 1.3ch;
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.fishing__species--caught .fishing__species-count { color: var(--accent); font-weight: 700; }
+
+@media (max-width: 440px) {
+  .fishing { gap: 0.5rem; }
+  .fishing__header { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 0.35rem; }
+  .fishing__condition { padding: 0.35rem 0.45rem; }
+  .fishing__condition-label { font-size: 0.9rem; }
+  .fishing__condition-odds { font-size: 0.55rem; }
+  .fishing__tallies { gap: 0.12rem 0.3rem; }
+  .fishing__status, .fishing__rare-count, .fishing__book-count { font-size: 0.65rem; }
+  .fishing__spot { gap: 0.2rem; padding: 0.45rem; }
+  .fishing__pool { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.16rem 0.22rem; }
+  .fishing__species { grid-template-columns: 0.58rem minmax(0, 1fr) auto; gap: 0 0.2rem; padding: 0.15rem 0.18rem; }
+  .fishing__clue { font-size: 0.72rem; }
+  .fishing__fish-name { font-size: 0.65rem; }
+  .fishing__species-odds { font-size: 0.56rem; }
+}

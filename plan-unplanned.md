@@ -1,1 +1,2 @@
 - can we add a way to reset individual games or all points? idk where this would live tho because going into each game to reset points seems annoying, but having it on the main ui also seems meh. but then like haivng a settings page with reset for each games seems like a lot? idk lol
+- change rites to circuits wherever referenced in wizards tower
