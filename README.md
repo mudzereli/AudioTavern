@@ -51,7 +51,7 @@ folder to any static host — no compilation, no dependencies.
 | Magical Flora | Planar gardening | Build a straight run of distinct kinds to bloom its middle; longer runs are needed as more planes arrive. | Magical Flora |
 | Bug Hunt | Telegraph tactics | Hold a line of fire on it and slip the corners it cannot; bar the door it needs. One bite and the sector is over. | Bug Hunt |
 | Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
-| Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed rite brings a longer route. | Wizard's Tower |
+| Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed circuit brings a longer route. | Wizard's Tower |
 | Fishing Village | Catchbook fishing | Cast through shifting day, night, and weather; fill 18 fish slots for first-catch rewards. | Fishing Village |
 | The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. A crate filled to its last square pays the trip twice. | Homecoming |
 | Moonshine | Upgrade economy | A backyard still, a shed of bottles and four chains of upgrades bought out of the night's takings: the score is the bottles the still makes, and every row prints what its next step changes and nothing else. | Distilled: Backwoods |

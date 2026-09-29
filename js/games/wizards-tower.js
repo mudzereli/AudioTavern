@@ -152,7 +152,7 @@ const game = {
     this.ctx = ctx;
     this.alive = true;
     this.locked = false;
-    this.rites = 0;
+    this.circuits = 0;
     clearTimeout(this.nextTimer);
     this.dealPuzzle();
   },
@@ -171,7 +171,7 @@ const game = {
 
   dealPuzzle() {
     this.phase = 'puzzle';
-    this.size = this.rites < 4 ? 4 : 5;
+    this.size = this.circuits < 4 ? 4 : 5;
     this.path = makePath(this.ctx.rng, this.size);
     this.tower = this.path[0];
     this.altar = this.path[this.path.length - 1];
@@ -185,7 +185,7 @@ const game = {
       this.tiles[index] = { base, turns: 0, decoy: false };
     }
 
-    const scrambleCount = Math.min(2 + Math.floor(this.rites / 2), this.path.length - 1);
+    const scrambleCount = Math.min(2 + Math.floor(this.circuits / 2), this.path.length - 1);
     const scrambled = shuffle(this.ctx.rng, this.path.slice(0, -1)).slice(0, scrambleCount);
     for (const index of scrambled) {
       const tile = this.tiles[index];
@@ -210,7 +210,7 @@ const game = {
       this.board.append(button);
       this.cells.push(button);
     }
-    this.ctx.message(`Rite ${this.rites + 1}. Turn the runes to link the tower and altar.`);
+    this.ctx.message(`Circuit ${this.circuits + 1}. Turn the runes to link the tower and altar.`);
     this.paint();
   },
 
@@ -241,9 +241,9 @@ const game = {
     const reached = this.connected();
     if (reached.has(this.altar)) {
       this.phase = 'complete';
-      this.rites += 1;
+      this.circuits += 1;
       this.ctx.addPoints(1);
-      this.ctx.message(`Circuit complete. ${this.rites} ${plural(this.rites, 'rite')} completed.`);
+      this.ctx.message(`${this.circuits} ${plural(this.circuits, 'circuit')} complete.`);
       this.paint(reached);
       this.nextTimer = setTimeout(() => {
         if (this.alive) this.dealPuzzle();
@@ -258,7 +258,7 @@ const game = {
     for (let index = 0; index < this.tiles.length; index += 1) {
       const tile = this.tiles[index], button = this.cells[index];
       const mask = rotate(tile.base, tile.turns);
-      const place = index === this.tower ? 'Tower source, ' : index === this.altar ? 'Ritual altar, ' : '';
+      const place = index === this.tower ? 'Tower source, ' : index === this.altar ? 'Altar, ' : '';
       button.disabled = !this.canPlay();
       button.classList.toggle('wt__tile--connected', reached.has(index));
       button.classList.toggle('wt__tile--source', index === this.tower);
@@ -268,7 +268,7 @@ const game = {
       button.setAttribute('aria-label', `${place}${tile.decoy ? 'decoy rune' : 'rune'}, connections ${connectionLabel(mask)}${this.canPlay() ? ', click to rotate clockwise' : ''}`);
       button.style.setProperty('--wt-turn', `${tile.turns * 90}deg`);
     }
-    this.status.textContent = `Rite ${this.rites + 1} · ${this.size} x ${this.size}`;
+    this.status.textContent = `Circuit ${this.circuits + 1} · ${this.size} x ${this.size}`;
   },
 };
 

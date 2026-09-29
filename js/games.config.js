@@ -337,7 +337,7 @@ export const GAMES = [
     category: 'arcane',
     accent: '#4db99c',
     scoreLabel: 'circuits',
-    rules: 'Rotate rune tiles to carry starlight from the tower to the altar. Complete circuits to score; each rite brings a longer route.',
+    rules: 'Rotate rune tiles to carry starlight from the tower to the altar. Complete circuits to score; routes grow longer as you progress.',
     // Rotate runes to route the light; the shell bar stays hidden.
     actionLabel: null,
     track: {
