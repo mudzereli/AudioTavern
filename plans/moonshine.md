@@ -1,7 +1,8 @@
 # Moonshine — track 323, Distilled: Backwoods
 
-A ten-minute upgrade economy in **The Wilds**. One static board: a still, a shed, three
-rate readouts, and four rows you can buy. **The score is what the still makes** — one point a
+A ten-minute upgrade economy in **The Wilds**. One static board: a still, a shed, four
+rate readouts, and six upgrade rows. The Still is always available; two of the other five
+chains are randomly unavailable each night. **The score is what the still makes** — one point a
 bottle, counted as it leaves the kettle, sold or not — and money is only the budget the shop
 is bought with, which is what makes the night a race between the still and the till.
 
@@ -31,12 +32,13 @@ still makes bottles (score) → the shed holds them → customers take them → 
   is the only thing that clears a shed the customers cannot keep up with. A dirty click answers
   with *Still walking the last one out* rather than hitting a dead button.
 
-## The four chains
+## The six chains
 
-Each chain is bought **in order** and the chains are independent, so the board shows one
-buyable step per chain at all times — four rows, no tree, no scrolling menu. Each chain owns
-exactly one lever: **rate, capacity, sale rate, price**. A step's `value` is what the chain is
-worth once bought, not an increment.
+Each available chain is bought **in order** and the chains are independent. All six rows stay
+visible; two of the five non-Still chains are marked out for the night. The selection is drawn
+from the run's seeded RNG, giving ten possible availability sets while keeping production
+available in every run. Each chain owns one lever. A step's `value` is what the chain is worth
+once bought, not an increment.
 
 | Chain | Lever | Base | Steps (cost → effect) |
 | --- | --- | --- | --- |
@@ -44,6 +46,8 @@ worth once bought, not an increment.
 | Customers | bottles out a second | 0.1 b/s | Regular Customers 20 → 0.25 · Bar Connection 50 → 0.6 · Delivery Wagon 120 → 1 · Delivery Truck 350 → 1.4 |
 | The Mash | $ a bottle | $2 | Better Mash 30 → 4 · Quality Ingredients 100 → 8 · Secret Recipe 300 → 16 · Premium Moonshine 750 → 30 · Black Label 1500 → 50 |
 | The Shed | bottles that can wait | 5 | Extra Crate 15 → 10 · Storage Shed 50 → 25 · Barn 175 → 75 · Warehouse 500 → 200 |
+| Runners | hand sales a second | 0.4 | Quick Step 15 → 0.45 · Night Route 45 → 0.5 · Handcart 125 → 0.55 · Fast Crew 300 → 0.6 |
+| Aging Casks | mature bottle value multiplier | 1× | Charred Oak 20 → 1.5× · Cool Cellar 60 → 2× · Deep Cellar 175 → 2.5× · Hidden Stock 500 → 3× · Master Cooper 1200 → 4× |
 
 **The Work chain is deleted** — it was the still's own lever sold twice, and its first step
 was beaten outright by a cheaper one. **The Mash ladder is doubled with its base**: the money
@@ -87,9 +91,11 @@ where they are:
 - **Every chain has a real purpose.** Without the still nothing is made, without the mash a
   bottle is worth `$2`, without the buyers the hand caps out at 0.4 b/s, and without the shed
   every stall is thrown away.
-- **The hand is a fixed 0.4 b/s**, part of the shape above rather than an upgrade of its own —
-  which is why a customers step is cheap and near-useless early, and why nothing on the board
-  has to say so.
+- **Runners increase hand-sale rate from 0.4 to at most 0.6 b/s.** Customers top out at 1.4,
+  so their combined ceiling still matches the Still's 2 b/s top rate. The Runners row and rate
+  readout make the active sales channel's contribution explicit.
+- **Aging Casks pay a premium for stock held for 30 seconds.** Stock sells oldest first, so
+  this rewards spare shed capacity without changing the base value of freshly made bottles.
 
 ## The clock, and what happens at the bell
 
@@ -113,21 +119,21 @@ where they are:
 
 ## Boundaries (do not change these without asking)
 
-- **Nothing unlocks anything else.** Sequential within a chain, independent across chains.
+- **Nothing unlocks anything else.** Progression is sequential within each chain and independent
+  across chains. The Still is always available; two other chains are unavailable each night.
 - **The score is bottles made.** Do not move it to bottles sold or to cash: sold caps at
   `sell × T` and makes the shed dead weight, and cash makes every purchase look like losing.
 - **Never let `sale top + hand ceiling` reach the still's top rate.** The Customers ladder
   stops at 1.4 b/s against a still top of 2 for exactly this reason — the other way round the
   shelf never fills again and the shed chain is unsellable.
-- **The hand-sale stays, as a bonus rather than a channel.** It is what clears a shed the
-  buyers are not keeping up with, and it is worth real money — but no upgrade is ever
-  justified by it, and no row ever says one is. A run with no clicking at all still works
-  from the first second.
+- **The hand-sale stays a secondary channel.** Runners can improve it, but its 0.6 b/s ceiling
+  and the Customers chain's 1.4 b/s ceiling keep combined sales at or below the Still's 2 b/s
+  maximum. A run with no clicking at all still works from the first second.
 - **The rows state the change and nothing else.** No projections, no payback times, no pace
   lines, no verdicts on an upgrade. `hand-sold only` was the wrong string because it blamed the
   upgrade for a hole in the economy; the hole was closed instead, with the base customer rate —
   and the pace lines went the same way as the projection that fed them.
-- One module, one stylesheet, under the 500-line budget; the five chains are data, so a new
+- One module, one stylesheet, under the 500-line budget; the six chains are data, so a new
   upgrade is one array entry and no code.
 - The board is `width: min(440px, 100%)`, the rows are real buttons (tap targets the whole
   width of the row), nothing binds a key, and the still is drawn with `svgEl`/`svgPath`.

@@ -6,29 +6,23 @@
    never scored — so the night is a race between making bottles and affording
    the kit that makes more of them.
 
-   Four chains, one lever each, each bought in order: the still sets the rate,
-   customers take bottles off you, the mash sets what a bottle is worth, and the
-   shed decides how many can wait before the kettle stalls. Nothing unlocks
-   anything else, and every row says what its next step changes — what that is
-   worth before the bell is the player's sum to do.
+  Six chains, one lever each, each bought in order. The Still is always open;
+  two of the other five are out each night, changing which strategy is available.
 
-   The shell's button sells one bottle by hand, one bottle per SELL_COOLDOWN_MS.
+  The shell's button sells one bottle by hand at the Runners rate.
    In the opening the hand is the only real channel; from the middle of the night
    the customers do it, and the hand is what clears a shed they cannot keep up
    with.
    --------------------------------------------------------------------------- */
 
 import { el, plural, svgEl, svgPath } from '../dom.js';
+import { shuffle } from '../rng.js';
 
 /** How often the still and the buyers are settled. */
 const TICK_MS = 200;
 
-/**
- * How long it takes to walk a bottle out to a buyer by hand. The hand is a real channel —
- * the only one in the opening — but a slow one, which is what stops a fast finger from
- * standing in for the customers chain once the still is producing properly.
- */
-const SELL_COOLDOWN_MS = 2500;
+/** How long stock must wait before Aging Casks pay their premium. */
+const CASK_AGE_SECONDS = 30;
 
 /* The still: a copper pot, a neck curling down to a spout, a drip, and a fire. */
 const ART = [
@@ -37,7 +31,7 @@ const ART = [
   'M14 58 l5 -8 5 8',
 ];
 
-/* The four chains — one per lever. `base` is what the chain is worth at level 0; a step's
+/* The six chains — one per lever. `base` is what the chain is worth at level 0; a step's
    `value` is what the chain is worth once that step is bought, never an increment. */
 const CHAINS = [
   {
@@ -93,6 +87,29 @@ const CHAINS = [
       { name: 'Warehouse', cost: 500, value: 200 },
     ],
   },
+  {
+    id: 'runners',
+    label: 'Runners',
+    base: 0.4,
+    steps: [
+      { name: 'Quick Step', cost: 15, value: 0.45 },
+      { name: 'Night Route', cost: 45, value: 0.5 },
+      { name: 'Handcart', cost: 125, value: 0.55 },
+      { name: 'Fast Crew', cost: 300, value: 0.6 },
+    ],
+  },
+  {
+    id: 'casks',
+    label: 'Aging Casks',
+    base: 1,
+    steps: [
+      { name: 'Charred Oak', cost: 20, value: 1.5 },
+      { name: 'Cool Cellar', cost: 60, value: 2 },
+      { name: 'Deep Cellar', cost: 175, value: 2.5 },
+      { name: 'Hidden Stock', cost: 500, value: 3 },
+      { name: 'Master Cooper', cost: 1200, value: 4 },
+    ],
+  },
 ];
 
 function money(amount) {
@@ -117,6 +134,8 @@ function statsFrom(levels) {
     sell: value('buyers'), // bottles a second the buyers take off you
     worth: value('mash'), // dollars a bottle
     room: value('shed'), // bottles that can wait
+    hand: value('runners'), // bottles a second the player can sell
+    agedWorth: Math.round(value('mash') * value('casks')),
   };
 }
 
@@ -130,6 +149,8 @@ function effectOf(chain, before, after) {
   if (chain.id === 'mash') return `$${money(before.worth)} → $${money(after.worth)} a bottle`;
   if (chain.id === 'shed') return `${before.room} → ${after.room} bottles`;
   if (chain.id === 'buyers') return `${compact(before.sell)} → ${compact(after.sell)} a second`;
+  if (chain.id === 'runners') return `${compact(before.hand)} → ${compact(after.hand)} a second`;
+  if (chain.id === 'casks') return `$${money(before.agedWorth)} → $${money(after.agedWorth)} after ${CASK_AGE_SECONDS}s`;
   return `${compact(before.rate)} → ${compact(after.rate)} a second`;
 }
 
@@ -177,6 +198,7 @@ const game = {
     this.stillValue = cell('Bottles a second');
     this.buyersValue = cell('Buyers a second');
     this.mashValue = cell('A bottle');
+    this.handValue = cell('Hand a second');
 
     /* The shop -------------------------------------------------------------- */
 
@@ -215,7 +237,9 @@ const game = {
     this.last = performance.now();
     clearInterval(this.timer);
     this.timer = setInterval(() => this.tick(), TICK_MS);
-    ctx.message('One bottle at a time. Spend what comes in.');
+    const unavailable = CHAINS.filter((chain) => this.unavailable.has(chain.id))
+      .map((chain) => chain.label).join(' and ');
+    ctx.message(`${unavailable} are out tonight. Spend what comes in.`);
     this.paint();
   },
 
@@ -238,6 +262,9 @@ const game = {
     this.spent = 0;
     this.handReadyAt = 0;
     this.levels = Object.fromEntries(CHAINS.map((chain) => [chain.id, 0]));
+    this.stock = [];
+    this.unavailable = new Set(shuffle(this.ctx.rng, CHAINS.filter((chain) => chain.id !== 'still'))
+      .slice(0, 2).map((chain) => chain.id));
   },
 
   /* ------------------------------------------------------------------- the clock */
@@ -255,6 +282,7 @@ const game = {
     // counted, so the still makes exactly what it would have made in the foreground and one
     // tick pays out the whole gap. The shed is what keeps a walk away honest: leave it long
     // enough and the kettle fills up and stalls like any other time.
+    for (const batch of this.stock) batch.age += dt;
     this.brewAcc += stats.rate * dt;
     let made = 0;
     while (this.brewAcc >= 1) {
@@ -266,6 +294,7 @@ const game = {
       this.bottles += 1;
       made += 1;
     }
+    if (made > 0) this.stock.push({ count: made, age: 0 });
     // A bottle scores the moment it is made, whether or not anybody ever buys it. Batched
     // into one call a tick, because every addPoints is a localStorage write in the shell.
     if (made > 0) this.ctx.addPoints(made);
@@ -274,9 +303,7 @@ const game = {
     let earned = 0;
     while (this.sellAcc >= 1 && this.bottles > 0) {
       this.sellAcc -= 1;
-      this.bottles -= 1;
-      this.sold += 1;
-      earned += stats.worth;
+      earned += this.takeBottle(stats);
     }
     if (this.bottles <= 0) this.sellAcc = 0; // nobody waits at an empty shed
     if (earned > 0) {
@@ -290,6 +317,7 @@ const game = {
 
   buy(chain) {
     if (!this.alive || this.ctx.run.state !== 'running') return;
+    if (this.unavailable.has(chain.id)) return;
     const level = this.levels[chain.id];
     const step = chain.steps[level];
     if (!step || this.cash < step.cost) return;
@@ -310,14 +338,23 @@ const game = {
       this.ctx.message('Nothing in the shed yet.');
       return;
     }
-    const { worth } = statsFrom(this.levels);
-    this.handReadyAt = performance.now() + SELL_COOLDOWN_MS;
-    this.bottles -= 1;
-    this.sold += 1;
+    const stats = statsFrom(this.levels);
+    const worth = this.takeBottle(stats);
+    this.handReadyAt = performance.now() + 1000 / stats.hand;
     this.cash += worth;
     this.takings += worth;
     this.ctx.message(`Sold a bottle at the door for $${money(worth)}.`);
     this.paint();
+  },
+
+  takeBottle(stats) {
+    const batch = this.stock[0];
+    if (!batch) return 0;
+    batch.count -= 1;
+    this.bottles -= 1;
+    this.sold += 1;
+    if (batch.count === 0) this.stock.shift();
+    return batch.age >= CASK_AGE_SECONDS ? stats.agedWorth : stats.worth;
   },
 
   paint() {
@@ -328,6 +365,7 @@ const game = {
     this.stillValue.textContent = compact(stats.rate);
     this.buyersValue.textContent = compact(stats.sell);
     this.mashValue.textContent = `$${money(stats.worth)}`;
+    this.handValue.textContent = compact(stats.hand);
     this.cashValue.textContent = `$${money(this.cash)}`;
     this.shedLabel.textContent = `${this.bottles} / ${stats.room}`;
     this.shedFill.style.transform = `scaleX(${Math.min(1, this.bottles / stats.room)})`;
@@ -340,6 +378,16 @@ const game = {
     this.ctx.setActionEnabled(live);
     for (const { chain, button, name, cost, effectEl, marks } of this.rows) {
       const level = this.levels[chain.id];
+      if (this.unavailable.has(chain.id)) {
+        button.classList.add('moonshine__step--closed');
+        button.classList.remove('moonshine__step--ready');
+        name.textContent = 'Out tonight';
+        cost.textContent = '';
+        effectEl.textContent = 'This chain is unavailable for the night.';
+        button.disabled = true;
+        continue;
+      }
+      button.classList.remove('moonshine__step--closed');
       const step = chain.steps[level];
       marks.forEach((pip, index) => pip.classList.toggle('moonshine__pip--on', index < level));
       if (!step) {
