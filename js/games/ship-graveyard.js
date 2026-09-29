@@ -12,6 +12,18 @@ const STORM_MIN = 20;
 const STORM_MAX = 30;
 const BEAT_MS = 1050;
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const REFITS = [
+  { id: 'sounding-glass', name: 'Sounding Glass', effect: 'Shows exact salvage at every wreck.' },
+  { id: 'tide-reader', name: 'Tide Reader', effect: 'Shows strain costs on every route.' },
+  { id: 'chartwright-cut', name: "Chartwright's Cut", effect: 'Adds a low-risk lane from the skiff.' },
+  { id: 'salvage-winch', name: 'Salvage Winch', effect: 'Quick takes 3, but costs 2 base strain.' },
+  { id: 'divers-saw', name: "Diver's Saw", effect: 'Stripping a faint wreck costs 2 base strain.' },
+  { id: 'deepwater-hooks', name: 'Deepwater Hooks', effect: 'First strong-wreck Strip each trip gains 1 cargo.' },
+  { id: 'sealed-hold', name: 'Sealed Hold', effect: 'Cargo strain rises at 7 and 11 cargo, not 5 and 9.' },
+  { id: 'storm-jib', name: 'Storm Jib', effect: 'First loaded crossing each trip costs 2 less strain.' },
+  { id: 'keel-spurs', name: 'Keel Spurs', effect: 'First empty crossing each trip costs 1 less strain.' },
+  { id: 'undertow-charm', name: 'Undertow Charm', effect: 'A capsize threat triggers an automatic cargo dump and -3 strain.' },
+];
 
 const LOCATIONS = [
   { id: 'drifter', name: 'Drifter', x: 50, y: 88 },
@@ -78,6 +90,12 @@ const game = {
     storm.append(stormHead, this.stormBar);
     status.append(expedition, cargo, storm);
 
+    this.voyage = el('p', 'graveyard__voyage');
+    this.refitPanel = el('details', 'graveyard__refits');
+    this.refitSummary = el('summary', 'graveyard__refits-summary');
+    this.refitList = el('ul', 'graveyard__refit-list');
+    this.refitPanel.append(this.refitSummary, this.refitList);
+
     this.chart = el('div', 'graveyard__chart');
     this.chart.setAttribute('role', 'group');
     this.chart.setAttribute('aria-label', 'Sea chart of the Ship Graveyard');
@@ -140,7 +158,7 @@ const game = {
     this.actions.append(this.quickButton, this.stripButton, this.returnButton);
 
     this.hint = el('p', 'graveyard__hint', 'Click a route on the chart to travel. At a wreck, take a quick haul or strip the whole thing, then get back to the skiff to bank it.');
-    wrap.append(status, this.chart, this.actions, this.hint);
+    wrap.append(status, this.voyage, this.refitPanel, this.chart, this.actions, this.hint);
     ctx.stage.append(wrap);
   },
 
@@ -149,6 +167,9 @@ const game = {
     this.totalExtracted = 0;
     this.expeditionNumber = 0;
     this.previousStartLocation = null;
+    this.chartFragments = 0;
+    this.heartReturns = 0;
+    this.refits = new Set();
     this.newExpedition(ctx);
   },
 
@@ -164,6 +185,7 @@ const game = {
     this.locked = false;
     this.expeditionNumber += 1;
     this.phase = 'outbound';
+    this.refitUses = new Set();
     const startChoices = LOCATIONS.map((_, index) => index)
       .filter((index) => index !== this.previousStartLocation);
     this.startLocation = startChoices[Math.floor(ctx.rng() * startChoices.length)];
@@ -173,13 +195,19 @@ const game = {
     this.storm = 0;
     this.stormLimit = stormLimitFor(ctx.rng);
     this.searched = new Set();
-    this.currentLanes = this.createRoutes(ctx.rng);
+    this.fragmentOnboard = false;
+    this.heartOnboard = false;
     this.caches = LOCATIONS.map((_, index) => index === this.startLocation
       ? 0
       : (ctx.rng() < 0.3 ? 5 : 2) + Math.floor(ctx.rng() * 3));
+    this.targetType = this.chartFragments >= 3 ? 'heart' : 'fragment';
+    const targets = LOCATIONS.map((_, index) => index).filter((index) => index !== this.startLocation);
+    this.targetLocation = this.targetType ? targets[Math.floor(ctx.rng() * targets.length)] : null;
+    if (this.targetType === 'heart') this.caches[this.targetLocation] += 2;
+    this.currentLanes = this.createRoutes(ctx.rng);
 
     this.paint();
-    ctx.message(`Expedition ${this.expeditionNumber}: skiff position shifted, and the storm will bear ${this.stormLimit} strain. Choose a route and bring the cargo home.`);
+    ctx.message(`Expedition ${this.expeditionNumber}: the skiff has shifted position, and the storm will bear ${this.stormLimit} strain. Find salvage and bring it home.`);
   },
 
   createRoutes(rng) {
@@ -207,6 +235,13 @@ const game = {
       if (used.has(key) || distanceBetween(pair.from, pair.to) > 58 || rng() >= 0.28) continue;
       routes.push({ ...pair, risk: 1 + Math.floor(rng() * 3) });
     }
+    if (this.refits.has('chartwright-cut')) {
+      const connected = new Set(routes.map((lane) => routeKey(lane.from, lane.to)));
+      const target = LOCATIONS.map((_, index) => index)
+        .filter((index) => index !== this.startLocation && !connected.has(routeKey(this.startLocation, index)))
+        .sort((first, second) => distanceBetween(this.startLocation, first) - distanceBetween(this.startLocation, second))[0];
+      if (target !== undefined) routes.push({ from: this.startLocation, to: target, risk: 1 });
+    }
     return routes;
   },
 
@@ -220,9 +255,26 @@ const game = {
   },
 
   cargoStrain() {
-    if (this.cargo >= 9) return 2;
-    if (this.cargo >= 5) return 1;
+    const first = this.refits.has('sealed-hold') ? 7 : 5;
+    const second = this.refits.has('sealed-hold') ? 11 : 9;
+    if (this.cargo >= second) return 2;
+    if (this.cargo >= first) return 1;
     return 0;
+  },
+
+  routeStrain(lane, includeRefits = true) {
+    let strain = lane.risk + this.cargoStrain();
+    if (includeRefits && this.cargo && this.refits.has('storm-jib') && !this.refitUses.has('storm-jib')) strain -= 2;
+    if (includeRefits && !this.cargo && this.refits.has('keel-spurs') && !this.refitUses.has('keel-spurs')) strain -= 1;
+    return Math.max(1, strain);
+  },
+
+  awardRefit(ctx) {
+    const available = REFITS.filter((refit) => !this.refits.has(refit.id));
+    if (!available.length) return null;
+    const refit = available[Math.floor(ctx.rng() * available.length)];
+    this.refits.add(refit.id);
+    return refit;
   },
 
   paint() {
@@ -243,18 +295,26 @@ const game = {
       button.classList.toggle('graveyard__node--strong', !isSkiff && !this.searched?.has(index) && this.caches[index] >= 5);
       button.disabled = this.locked || isCurrent || !lane;
       const location = LOCATIONS[index];
-      const extra = lane ? `, route adds ${lane.risk + this.cargoStrain()} storm strain` : '';
+      const extra = lane ? `, route adds ${this.routeStrain(lane)} storm strain` : '';
       const signal = !isSkiff && !this.searched?.has(index)
-        ? `, ${this.caches[index] >= 5 ? 'strong' : 'faint'} salvage signal`
+        ? `, ${this.refits.has('sounding-glass') ? `${this.caches[index]} salvage` : `${this.caches[index] >= 5 ? 'strong' : 'faint'} salvage signal`}`
         : '';
-      button.setAttribute('aria-label', `${location.name}${isSkiff ? ' skiff' : ' wreck'}${signal}${this.searched?.has(index) ? ', already searched' : ''}${isCurrent ? ', current location' : extra}`);
+      const isTarget = index === this.targetLocation;
+      button.classList.toggle('graveyard__node--objective', isTarget);
+      button.classList.toggle('graveyard__node--heart', isTarget && this.targetType === 'heart');
+      const targetLabel = isTarget ? `, ${this.targetType === 'heart' ? 'final salvage' : 'chart fragment'} objective` : '';
+      button.setAttribute('aria-label', `${location.name}${isSkiff ? ' skiff' : ' wreck'}${signal}${targetLabel}${this.searched?.has(index) ? ', already searched' : ''}${isCurrent ? ', current location' : extra}`);
       const marker = button.querySelector('.graveyard__node-marker');
       if (isSkiff) {
         marker.textContent = 'SKIFF';
+      } else if (isTarget) {
+        marker.textContent = this.targetType === 'heart' ? 'HEART' : 'CHART';
+      } else if (this.searched.has(index)) {
+        marker.textContent = 'Searched';
+      } else if (this.refits.has('sounding-glass')) {
+        marker.textContent = String(this.caches[index]);
       } else {
-        marker.textContent = this.searched.has(index)
-          ? 'Searched'
-          : `${routeNumbers.has(index) ? `${routeNumbers.get(index)} · ` : ''}${this.caches[index] >= 5 ? 'Strong' : 'Faint'}`;
+        marker.textContent = `${routeNumbers.has(index) ? `${routeNumbers.get(index)} · ` : ''}${this.caches[index] >= 5 ? 'Strong' : 'Faint'}`;
       }
     });
 
@@ -266,14 +326,13 @@ const game = {
       // in this chart are hidden with a class instead. Otherwise every possible
       // pair of locations draws a line.
       line.classList.toggle('graveyard__route--hidden', !route);
-      riskTag.hidden = !isOpen;
+      riskTag.hidden = !route || (!isOpen && !this.refits.has('tide-reader'));
       if (!route) return;
       line.classList.toggle('graveyard__route--open', isOpen);
-      const currentCost = route.risk + this.cargoStrain();
-      // Only a lane you can actually take is coloured. Everything else stays chart furniture.
-      line.classList.toggle('graveyard__route--rough', Boolean(isOpen) && currentCost >= 3);
+      const currentCost = this.routeStrain(route, Boolean(isOpen));
+      line.classList.toggle('graveyard__route--rough', currentCost >= 3);
       riskTag.textContent = String(currentCost);
-      riskTag.classList.toggle('graveyard__route-risk--rough', Boolean(isOpen) && currentCost >= 3);
+      riskTag.classList.toggle('graveyard__route-risk--rough', currentCost >= 3);
     });
 
     const limit = this.stormLimit ?? STORM_MIN;
@@ -291,15 +350,21 @@ const game = {
     this.expeditionValue.textContent = `${this.expeditionNumber} · ${this.phase.toUpperCase()}`;
     this.expeditionStatus.classList.toggle('graveyard__expedition--delivered', this.phase === 'delivered');
     this.expeditionStatus.classList.toggle('graveyard__expedition--lost', this.phase === 'lost');
+    this.quickButton.textContent = `Quick · up to ${this.refits.has('salvage-winch') ? 3 : 2} (+${this.refits.has('salvage-winch') ? 2 : 1} strain)`;
+    const target = this.targetLocation === null ? 'no charted objective' : `${this.targetType === 'heart' ? 'final salvage' : 'chart fragment'} at ${LOCATIONS[this.targetLocation].name}`;
+    this.voyage.textContent = `Hearts ${this.heartReturns} · Chart ${this.chartFragments}/3 · ${target}`;
+    this.refitSummary.textContent = `Refits ${this.refits.size}/${REFITS.length} · View effects`;
+    this.refitList.replaceChildren(...REFITS.filter((refit) => this.refits.has(refit.id)).map((refit) => el('li', '', `${refit.name}: ${refit.effect}`)));
+    if (!this.refits.size) this.refitList.append(el('li', '', 'Earn passive refits by delivering salvage.'));
 
     if (this.phase === 'delivered') {
-      this.hint.textContent = `Cargo delivered · ${this.lastDelivery} salvage banked. Expedition ${this.expeditionNumber + 1} begins shortly.`;
+      this.hint.textContent = `Cargo delivered · ${this.lastDelivery} salvage banked.${this.refitAward ? ` Refit earned: ${this.refitAward.name}.` : ''}${this.lastFragment ? ' Chart fragment secured.' : ''}${this.lastHeart ? ' The Graveyard\'s Heart is recovered.' : ''} Expedition ${this.expeditionNumber + 1} begins shortly.`;
     } else if (this.phase === 'lost') {
-      this.hint.textContent = `Expedition lost · ${this.lastLoss} cargo gone. Expedition ${this.expeditionNumber + 1} begins shortly.`;
+      this.hint.textContent = `Expedition lost · ${this.lastLoss} cargo gone${this.lastObjectiveLost ? '; the chart objective is lost' : ''}. Expedition ${this.expeditionNumber + 1} begins shortly.`;
     } else if (atSkiff && this.cargo > 0) {
       this.hint.textContent = 'Back at the skiff: deliver your cargo now, or sail out for one more wreck.';
     } else if (!atSkiff && !this.searched.has(this.position)) {
-      this.hint.textContent = `Wreck signal: ${this.caches[this.position] >= 5 ? 'strong' : 'faint'}, cache ${this.caches[this.position]}. Quick takes up to 2 (+1 strain); strip takes all (+3). Cargo adds strain.`;
+      this.hint.textContent = `Wreck signal: ${this.caches[this.position] >= 5 ? 'strong' : 'faint'}${this.refits.has('sounding-glass') ? `, cache ${this.caches[this.position]}` : ''}.${this.position === this.targetLocation ? ` Objective: recover the ${this.targetType === 'heart' ? 'Graveyard\'s Heart' : 'chart fragment'}.` : ''} Quick takes up to ${this.refits.has('salvage-winch') ? 3 : 2}; Strip takes all. Cargo adds strain.`;
     } else {
       this.hint.textContent = 'Choose a sea lane to travel. At a wreck, use Quick or Strip to search it; back at the skiff, use Return to bank the cargo. Cargo adds strain.';
     }
@@ -310,55 +375,88 @@ const game = {
     const option = this.availableLanes().find((entry) => entry.destination === destination);
     if (!option) return;
 
+    const strain = this.routeStrain(option.lane);
+    if (this.cargo && this.refits.has('storm-jib') && !this.refitUses.has('storm-jib')) this.refitUses.add('storm-jib');
+    if (!this.cargo && this.refits.has('keel-spurs') && !this.refitUses.has('keel-spurs')) this.refitUses.add('keel-spurs');
     this.position = destination;
-    const strain = option.lane.risk + this.cargoStrain();
     this.advanceStorm(strain, `Sailed to ${LOCATIONS[destination].name}. This crossing cost ${strain} strain.`);
   },
 
   search(method) {
     if (!this.alive || this.locked || this.position === this.startLocation || this.searched.has(this.position)) return;
     const cache = this.caches[this.position];
-    const found = method === 'quick' ? Math.min(2, cache) : cache;
+    let found = method === 'quick' ? Math.min(this.refits.has('salvage-winch') ? 3 : 2, cache) : cache;
+    const strong = cache >= 5;
+    if (method === 'strip' && strong && this.refits.has('deepwater-hooks') && !this.refitUses.has('deepwater-hooks')) {
+      found += 1;
+      this.refitUses.add('deepwater-hooks');
+    }
     this.searched.add(this.position);
     this.cargo += found;
-    const baseStrain = method === 'quick' ? 1 : 3;
+    let baseStrain = method === 'quick' ? (this.refits.has('salvage-winch') ? 2 : 1) : (method === 'strip' && !strong && this.refits.has('divers-saw') ? 2 : 3);
     const strain = baseStrain + this.cargoStrain();
     const choice = method === 'quick' ? 'Quick salvage' : 'You stripped the wreck';
+    if (this.position === this.targetLocation) {
+      if (this.targetType === 'fragment') this.fragmentOnboard = true;
+      else this.heartOnboard = true;
+    }
     this.advanceStorm(strain, `${choice}: ${found} salvage. Cargo aboard: ${this.cargo}; search cost ${strain} strain.`);
   },
 
   advanceStorm(strain, message) {
     this.storm += strain;
+    let charmMessage = '';
+    if (this.storm >= this.stormLimit && this.refits.has('undertow-charm') && !this.refitUses.has('undertow-charm')) {
+      this.refitUses.add('undertow-charm');
+      const jettisoned = Math.min(2, this.cargo);
+      this.cargo -= jettisoned;
+      this.storm -= 3;
+      charmMessage = `Undertow Charm jettisoned ${jettisoned} cargo and shed 3 strain.`;
+    }
     if (this.storm >= this.stormLimit) {
-      this.capsize();
+      this.capsize(charmMessage);
       return;
     }
     this.paint();
-    this.ctx.message(`${message} Storm strain: ${this.storm} / ${this.stormLimit}.`);
+    this.ctx.message(`${message}${charmMessage ? ` ${charmMessage}` : ''} Storm strain: ${this.storm} / ${this.stormLimit}.`);
   },
 
   extract() {
     if (!this.alive || this.locked || this.position !== this.startLocation || this.cargo === 0) return;
     const extracted = this.cargo;
-    this.totalExtracted += extracted;
-    this.ctx.addPoints(extracted);
+    this.lastFragment = this.fragmentOnboard;
+    this.lastHeart = this.heartOnboard;
+    this.lastObjectiveLost = false;
+    if (this.fragmentOnboard) this.chartFragments = Math.min(3, this.chartFragments + 1);
+    const heartBonus = this.heartOnboard ? 25 : 0;
+    if (this.heartOnboard) {
+      this.heartReturns += 1;
+      this.chartFragments = 0;
+    }
+    this.refitAward = this.heartOnboard ? this.awardRefit(this.ctx) : null;
+    const scored = extracted + heartBonus;
+    this.totalExtracted += scored;
+    this.ctx.addPoints(scored);
     this.locked = true;
     this.phase = 'delivered';
-    this.lastDelivery = extracted;
+    this.lastDelivery = scored;
     this.cargo = 0;
     this.paint();
-    this.ctx.message(`Cargo delivered: ${extracted} salvage banked. Expedition ${this.expeditionNumber} complete; ${this.totalExtracted} scored this run.`);
+    this.ctx.message(`Cargo delivered: ${extracted} salvage${heartBonus ? ` and ${heartBonus} for the Graveyard's Heart` : ''} banked.${this.lastFragment ? ' Chart fragment secured.' : ''}${this.refitAward ? ` Heart refit: ${this.refitAward.name} — ${this.refitAward.effect}` : ''} Expedition ${this.expeditionNumber} complete; ${this.totalExtracted} scored this run.`);
     this.settle();
   },
 
-  capsize() {
+  capsize(charmMessage = '') {
     const lost = this.cargo;
+    this.lastObjectiveLost = this.fragmentOnboard || this.heartOnboard;
+    this.lastFragment = false;
+    this.lastHeart = false;
     this.cargo = 0;
     this.locked = true;
     this.phase = 'lost';
     this.lastLoss = lost;
     this.paint();
-    this.ctx.message(`Expedition ${this.expeditionNumber} lost. The storm takes ${lost} cargo; extracted salvage remains safe.`);
+    this.ctx.message(`Expedition ${this.expeditionNumber} lost. ${charmMessage ? `${charmMessage} ` : ''}The storm takes ${lost} cargo; extracted salvage remains safe.`);
     this.settle();
   },
 
