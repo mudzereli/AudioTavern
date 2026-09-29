@@ -237,7 +237,7 @@ export const GAMES = [
     accent: '#71b9b2',
     scoreLabel: 'salvage extracted',
     rules:
-      'Sail a shifting chart, salvage wrecks, and return to the skiff before the storm breaks. The storm limit, route risks, and caches vary each expedition. Quick takes up to 2 cargo for 1 base strain; stripping takes the whole cache for 3. Cargo adds strain to every action. Deliver three chart fragments to reveal the Graveyard\'s Heart. Returning it resets chart progress, so collect three more to find it again. Each Heart you recover and deliver awards one unique passive refit; ordinary salvage returns do not. Refits do not repeat. Only extracted salvage scores.',
+      'Routes, caches, and storm limits change each expedition. Search wrecks and return cargo before storm strain capsizes you; more cargo means more strain. Quick takes up to 2 for 1 base strain; Strip takes all for 3. Deliver 3 chart fragments to reveal the Heart. Returning it resets fragments and awards a nonrepeating passive refit. Only extracted salvage scores.',
     // The chart, Search, and Return controls are the actions; no shell button is needed.
     actionLabel: null,
     track: {

@@ -64,16 +64,25 @@ const game = {
     const wrap = el('section', 'graveyard');
 
     const status = el('div', 'graveyard__status');
-    const cargo = el('div', 'graveyard__cargo');
-    cargo.append(el('span', 'graveyard__label', 'Cargo aboard'));
-    this.cargoValue = el('strong', 'graveyard__value', '0');
+    const cargo = el('div', 'graveyard__metric graveyard__cargo');
+    cargo.append(el('span', 'graveyard__label', 'Cargo'));
+    this.cargoValue = el('strong', 'graveyard__metric-value', '0');
     cargo.append(this.cargoValue);
 
-    const expedition = el('div', 'graveyard__expedition');
+    const expedition = el('div', 'graveyard__metric graveyard__expedition');
     expedition.append(el('span', 'graveyard__label', 'Expedition'));
-    this.expeditionValue = el('strong', 'graveyard__expedition-value', '1 · OUTBOUND');
+    this.expeditionValue = el('strong', 'graveyard__metric-value', '1');
     expedition.append(this.expeditionValue);
-    this.expeditionStatus = expedition;
+
+    const hearts = el('div', 'graveyard__metric');
+    hearts.append(el('span', 'graveyard__label', 'Hearts'));
+    this.heartValue = el('strong', 'graveyard__metric-value', '0');
+    hearts.append(this.heartValue);
+
+    const charts = el('div', 'graveyard__metric');
+    charts.append(el('span', 'graveyard__label', 'Charts'));
+    this.chartValue = el('strong', 'graveyard__metric-value', '0/3');
+    charts.append(this.chartValue);
 
     const storm = el('div', 'graveyard__storm');
     const stormHead = el('div', 'graveyard__storm-head');
@@ -88,9 +97,8 @@ const game = {
     this.stormFill = el('span', 'graveyard__meter-fill');
     this.stormBar.append(this.stormFill);
     storm.append(stormHead, this.stormBar);
-    status.append(expedition, cargo, storm);
+    status.append(expedition, cargo, hearts, charts);
 
-    this.voyage = el('p', 'graveyard__voyage');
     this.refitPanel = el('details', 'graveyard__refits');
     this.refitSummary = el('summary', 'graveyard__refits-summary');
     this.refitList = el('ul', 'graveyard__refit-list');
@@ -141,15 +149,23 @@ const game = {
     });
 
     this.actions = el('div', 'graveyard__actions');
-    this.quickButton = el('button', 'btn btn--ghost', 'Quick · up to 2 (+1 strain)');
+    this.quickButton = el('button', 'btn btn--ghost');
     this.quickButton.classList.add('graveyard__quick');
     this.quickButton.type = 'button';
     this.quickButton.disabled = true;
+    this.quickButton.append(
+      el('span', 'graveyard__action-label', 'Take some'),
+      this.quickDetail = el('span', 'graveyard__action-detail'),
+    );
     this.quickButton.addEventListener('click', () => this.search('quick'));
-    this.stripButton = el('button', 'btn btn--ghost', 'Strip · full cache (+3 strain)');
+    this.stripButton = el('button', 'btn btn--ghost');
     this.stripButton.classList.add('graveyard__strip');
     this.stripButton.type = 'button';
     this.stripButton.disabled = true;
+    this.stripButton.append(
+      el('span', 'graveyard__action-label', 'Take all'),
+      this.stripDetail = el('span', 'graveyard__action-detail'),
+    );
     this.stripButton.addEventListener('click', () => this.search('strip'));
     this.returnButton = el('button', 'btn btn--primary', 'Return to skiff');
     this.returnButton.type = 'button';
@@ -158,7 +174,19 @@ const game = {
     this.actions.append(this.quickButton, this.stripButton, this.returnButton);
 
     this.hint = el('p', 'graveyard__hint', 'Click a route on the chart to travel. At a wreck, take a quick haul or strip the whole thing, then get back to the skiff to bank it.');
-    wrap.append(status, this.voyage, this.refitPanel, this.chart, this.actions, this.hint);
+    this.returnNotice = el('div', 'graveyard__return-notice');
+    this.returnNotice.setAttribute('role', 'status');
+    this.returnNotice.setAttribute('aria-live', 'polite');
+    this.returnNotice.setAttribute('aria-atomic', 'true');
+    this.returnNotice.hidden = true;
+    this.returnCard = el('div', 'graveyard__return-card');
+    this.returnNoticeLabel = el('span', 'graveyard__return-label', 'Cargo returned');
+    this.returnNoticeValue = el('strong', 'graveyard__return-value');
+    this.returnNoticeLabel.setAttribute('aria-hidden', 'true');
+    this.returnNoticeValue.setAttribute('aria-hidden', 'true');
+    this.returnCard.append(this.returnNoticeLabel, this.returnNoticeValue);
+    this.returnNotice.append(this.returnCard);
+    wrap.append(status, this.refitPanel, storm, this.chart, this.actions, this.hint, this.returnNotice);
     ctx.stage.append(wrap);
   },
 
@@ -177,6 +205,7 @@ const game = {
     this.alive = false;
     this.locked = true;
     clearTimeout(this.beat);
+    this.returnNotice.hidden = true;
     this.paint();
   },
 
@@ -185,6 +214,9 @@ const game = {
     this.locked = false;
     this.expeditionNumber += 1;
     this.phase = 'outbound';
+    this.stormBar.classList.remove('graveyard__meter--event-delivered', 'graveyard__meter--event-lost');
+    this.returnNotice.hidden = true;
+    this.returnNotice.classList.remove('graveyard__return-notice--show');
     this.refitUses = new Set();
     const startChoices = LOCATIONS.map((_, index) => index)
       .filter((index) => index !== this.previousStartLocation);
@@ -254,11 +286,11 @@ const game = {
       }));
   },
 
-  cargoStrain() {
+  cargoStrain(cargo = this.cargo) {
     const first = this.refits.has('sealed-hold') ? 7 : 5;
     const second = this.refits.has('sealed-hold') ? 11 : 9;
-    if (this.cargo >= second) return 2;
-    if (this.cargo >= first) return 1;
+    if (cargo >= second) return 2;
+    if (cargo >= first) return 1;
     return 0;
   },
 
@@ -281,7 +313,6 @@ const game = {
     if (!this.nodeButtons) return;
     const options = this.availableLanes();
     const reachable = new Map(options.map(({ lane, destination }) => [destination, lane]));
-    const routeNumbers = new Map(options.slice(0, 4).map(({ destination }, index) => [destination, index + 1]));
 
     this.nodeButtons.forEach((button, index) => {
       const isSkiff = index === this.startLocation;
@@ -314,7 +345,7 @@ const game = {
       } else if (this.refits.has('sounding-glass')) {
         marker.textContent = String(this.caches[index]);
       } else {
-        marker.textContent = `${routeNumbers.has(index) ? `${routeNumbers.get(index)} · ` : ''}${this.caches[index] >= 5 ? 'Strong' : 'Faint'}`;
+        marker.textContent = this.caches[index] >= 5 ? 'Strong' : 'Faint';
       }
     });
 
@@ -347,15 +378,24 @@ const game = {
     this.quickButton.disabled = !canSearch || atSkiff || this.searched.has(this.position);
     this.stripButton.disabled = !canSearch || atSkiff || this.searched.has(this.position);
     this.returnButton.disabled = this.locked || !atSkiff || this.cargo === 0;
-    this.expeditionValue.textContent = `${this.expeditionNumber} · ${this.phase.toUpperCase()}`;
-    this.expeditionStatus.classList.toggle('graveyard__expedition--delivered', this.phase === 'delivered');
-    this.expeditionStatus.classList.toggle('graveyard__expedition--lost', this.phase === 'lost');
-    this.quickButton.textContent = `Quick · up to ${this.refits.has('salvage-winch') ? 3 : 2} (+${this.refits.has('salvage-winch') ? 2 : 1} strain)`;
-    const target = this.targetLocation === null ? 'no charted objective' : `${this.targetType === 'heart' ? 'final salvage' : 'chart fragment'} at ${LOCATIONS[this.targetLocation].name}`;
-    this.voyage.textContent = `Hearts ${this.heartReturns} · Chart ${this.chartFragments}/3 · ${target}`;
+    this.expeditionValue.textContent = String(this.expeditionNumber);
+    const cache = this.position === this.startLocation ? 0 : this.caches[this.position];
+    const quickAmount = Math.min(this.refits.has('salvage-winch') ? 3 : 2, cache);
+    const quickStrain = (this.refits.has('salvage-winch') ? 2 : 1) + this.cargoStrain(this.cargo + quickAmount);
+    const hasHookBonus = cache >= 5 && this.refits.has('deepwater-hooks') && !this.refitUses.has('deepwater-hooks');
+    const stripAmount = cache + Number(hasHookBonus);
+    const stripBaseStrain = cache < 5 && this.refits.has('divers-saw') ? 2 : 3;
+    const stripStrain = stripBaseStrain + this.cargoStrain(this.cargo + stripAmount);
+    this.quickDetail.textContent = `${quickStrain} strain`;
+    this.stripDetail.textContent = `${stripStrain} strain`;
+    this.heartValue.textContent = String(this.heartReturns);
+    this.chartValue.textContent = `${this.chartFragments}/3`;
     this.refitSummary.textContent = `Refits ${this.refits.size}/${REFITS.length} · View effects`;
-    this.refitList.replaceChildren(...REFITS.filter((refit) => this.refits.has(refit.id)).map((refit) => el('li', '', `${refit.name}: ${refit.effect}`)));
-    if (!this.refits.size) this.refitList.append(el('li', '', 'Earn passive refits by delivering salvage.'));
+    this.refitList.replaceChildren(...[...this.refits].reverse().map((id) => {
+      const refit = REFITS.find((entry) => entry.id === id);
+      return el('li', '', `${refit.name}: ${refit.effect}`);
+    }));
+    if (!this.refits.size) this.refitList.append(el('li', '', "Earn a passive refit by returning the Graveyard's Heart."));
 
     if (this.phase === 'delivered') {
       this.hint.textContent = `Cargo delivered · ${this.lastDelivery} salvage banked.${this.refitAward ? ` Refit earned: ${this.refitAward.name}.` : ''}${this.lastFragment ? ' Chart fragment secured.' : ''}${this.lastHeart ? ' The Graveyard\'s Heart is recovered.' : ''} Expedition ${this.expeditionNumber + 1} begins shortly.`;
@@ -439,6 +479,11 @@ const game = {
     this.ctx.addPoints(scored);
     this.locked = true;
     this.phase = 'delivered';
+    this.returnNotice.setAttribute('aria-label', `Cargo returned: ${extracted} salvage banked.`);
+    this.returnNoticeValue.textContent = `+${extracted}`;
+    this.returnNotice.hidden = false;
+    this.returnNotice.classList.add('graveyard__return-notice--show');
+    this.stormBar.classList.add('graveyard__meter--event-delivered');
     this.lastDelivery = scored;
     this.cargo = 0;
     this.paint();
@@ -454,6 +499,7 @@ const game = {
     this.cargo = 0;
     this.locked = true;
     this.phase = 'lost';
+    this.stormBar.classList.add('graveyard__meter--event-lost');
     this.lastLoss = lost;
     this.paint();
     this.ctx.message(`Expedition ${this.expeditionNumber} lost. ${charmMessage ? `${charmMessage} ` : ''}The storm takes ${lost} cargo; extracted salvage remains safe.`);
