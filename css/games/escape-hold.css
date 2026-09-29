@@ -12,22 +12,28 @@
 .hold__stat { display: grid; align-content: start; gap: 0.15rem; }
 
 .hold__stat-label {
+  min-height: 2.2em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   color: var(--ink-3);
   font-family: var(--font-num);
   font-size: 0.62rem;
   letter-spacing: 0.1em;
+  line-height: 1.1;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .hold__stat-value {
   color: var(--ink);
   font-family: var(--font-num);
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 
 .hold__stat-value--hot { color: var(--accent); }
-.hold__stat-value--quiet { color: var(--ink-2); font-size: 0.95rem; }
+.hold__stat-value--quiet { color: var(--ink-2); }
 
 .hold__board {
   width: min(410px, 100%);

@@ -14,6 +14,8 @@ const START = (ROWS - 1) * COLS + Math.floor(COLS / 2);
 const EXIT = Math.floor(COLS / 2);
 const BEAT_MS = 950;
 const CHASE_MS = 1000;
+const HEAD_START_PER_STREAK_MS = 100;
+const MAX_HEAD_START_MS = 1500;
 const MIN_CHASE_MS = 0;
 const ESCAPE_SPEEDUP = 1.1;
 
@@ -159,6 +161,7 @@ const game = {
     this.alive = false;
     this.locked = true;
     clearTimeout(this.beat);
+    clearTimeout(this.chaseStartTimer);
     clearInterval(this.chaseTimer);
   },
 
@@ -168,7 +171,10 @@ const game = {
   },
 
   newRound(ctx) {
+    clearTimeout(this.chaseStartTimer);
     clearInterval(this.chaseTimer);
+    this.chaseStartTimer = null;
+    this.chaseTimer = null;
     this.locked = false;
     this.position = START;
     this.passages = createMaze(ctx.rng);
@@ -230,7 +236,7 @@ const game = {
     const faster = Math.round((1 - 1 / ESCAPE_SPEEDUP ** streak) * 100);
     this.streakValue.textContent = String(streak);
     this.bestValue.textContent = String(best);
-    this.pursuitValue.textContent = faster > 0 ? `+${faster}% faster` : 'normal';
+    this.pursuitValue.textContent = `+${faster}%`;
     this.streakValue.classList.toggle('hold__stat-value--hot', streak >= 3);
   },
 
@@ -265,7 +271,15 @@ const game = {
         MIN_CHASE_MS,
         CHASE_MS / ESCAPE_SPEEDUP ** this.successfulEscapes,
       );
-      this.chaseTimer = setInterval(() => this.advancePursuer(), chaseInterval);
+      const headStart = Math.min(
+        this.successfulEscapes * HEAD_START_PER_STREAK_MS,
+        MAX_HEAD_START_MS,
+      );
+      this.chaseStartTimer = setTimeout(() => {
+        this.chaseStartTimer = null;
+        if (!this.alive || this.locked || !this.chaseActive) return;
+        this.chaseTimer = setInterval(() => this.advancePursuer(), chaseInterval);
+      }, headStart);
     }
 
     this.paint();
@@ -295,6 +309,7 @@ const game = {
 
   settle() {
     clearTimeout(this.beat);
+    clearTimeout(this.chaseStartTimer);
     clearInterval(this.chaseTimer);
     this.beat = setTimeout(() => {
       if (!this.alive) return;
