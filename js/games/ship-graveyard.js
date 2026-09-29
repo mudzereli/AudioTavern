@@ -7,7 +7,6 @@
    --------------------------------------------------------------------------- */
 
 import { el } from '../dom.js';
-
 const STORM_MIN = 20;
 const STORM_MAX = 30;
 const BEAT_MS = 1050;
@@ -62,28 +61,23 @@ const game = {
   mount(ctx) {
     this.ctx = ctx;
     const wrap = el('section', 'graveyard');
-
     const status = el('div', 'graveyard__status');
     const cargo = el('div', 'graveyard__metric graveyard__cargo');
     cargo.append(el('span', 'graveyard__label', 'Cargo'));
     this.cargoValue = el('strong', 'graveyard__metric-value', '0');
     cargo.append(this.cargoValue);
-
     const expedition = el('div', 'graveyard__metric graveyard__expedition');
     expedition.append(el('span', 'graveyard__label', 'Expedition'));
     this.expeditionValue = el('strong', 'graveyard__metric-value', '1');
     expedition.append(this.expeditionValue);
-
     const hearts = el('div', 'graveyard__metric');
     hearts.append(el('span', 'graveyard__label', 'Hearts'));
     this.heartValue = el('strong', 'graveyard__metric-value', '0');
     hearts.append(this.heartValue);
-
     const charts = el('div', 'graveyard__metric');
     charts.append(el('span', 'graveyard__label', 'Charts'));
     this.chartValue = el('strong', 'graveyard__metric-value', '0/3');
     charts.append(this.chartValue);
-
     const storm = el('div', 'graveyard__storm');
     const stormHead = el('div', 'graveyard__storm-head');
     stormHead.append(el('span', 'graveyard__label', 'Storm strain'));
@@ -98,22 +92,18 @@ const game = {
     this.stormBar.append(this.stormFill);
     storm.append(stormHead, this.stormBar);
     status.append(expedition, cargo, hearts, charts);
-
     this.refitPanel = el('details', 'graveyard__refits');
     this.refitSummary = el('summary', 'graveyard__refits-summary');
     this.refitList = el('ul', 'graveyard__refit-list');
     this.refitPanel.append(this.refitSummary, this.refitList);
-
     this.chart = el('div', 'graveyard__chart');
     this.chart.setAttribute('role', 'group');
     this.chart.setAttribute('aria-label', 'Sea chart of the Ship Graveyard');
-
     this.routeSvg = document.createElementNS(SVG_NS, 'svg');
     this.routeSvg.classList.add('graveyard__routes');
     this.routeSvg.setAttribute('viewBox', '0 0 100 100');
     this.routeSvg.setAttribute('preserveAspectRatio', 'none');
     this.routeSvg.setAttribute('aria-hidden', 'true');
-
     this.routeLines = ROUTE_PAIRS.map((pair) => {
       const start = LOCATIONS[pair.from];
       const end = LOCATIONS[pair.to];
@@ -132,7 +122,6 @@ const game = {
       return { line, riskTag, pair };
     });
     this.chart.append(this.routeSvg);
-
     this.nodeButtons = LOCATIONS.map((location, index) => {
       const button = el('button', 'graveyard__node');
       button.type = 'button';
@@ -147,7 +136,6 @@ const game = {
       this.chart.append(button);
       return button;
     });
-
     this.actions = el('div', 'graveyard__actions');
     this.quickButton = el('button', 'btn btn--ghost');
     this.quickButton.classList.add('graveyard__quick');
@@ -237,7 +225,6 @@ const game = {
     this.targetLocation = this.targetType ? targets[Math.floor(ctx.rng() * targets.length)] : null;
     if (this.targetType === 'heart') this.caches[this.targetLocation] += 2;
     this.currentLanes = this.createRoutes(ctx.rng);
-
     this.paint();
     ctx.message(`Expedition ${this.expeditionNumber}: the skiff has shifted position, and the storm will bear ${this.stormLimit} strain. Find salvage and bring it home.`);
   },
@@ -246,7 +233,6 @@ const game = {
     const connected = new Set([this.startLocation]);
     const remaining = new Set(LOCATIONS.map((_, index) => index).filter((index) => index !== this.startLocation));
     const routes = [];
-
     while (remaining.size) {
       let best = null;
       for (const from of connected) {
@@ -260,7 +246,6 @@ const game = {
       connected.add(best.to);
       remaining.delete(best.to);
     }
-
     const used = new Set(routes.map((lane) => routeKey(lane.from, lane.to)));
     for (const pair of ROUTE_PAIRS) {
       const key = routeKey(pair.from, pair.to);
@@ -348,7 +333,6 @@ const game = {
         marker.textContent = this.caches[index] >= 5 ? 'Strong' : 'Faint';
       }
     });
-
     const currentRoutes = new Map(this.currentLanes.map((lane) => [routeKey(lane.from, lane.to), lane]));
     this.routeLines.forEach(({ line, riskTag, pair }) => {
       const route = currentRoutes.get(routeKey(pair.from, pair.to));
@@ -365,7 +349,6 @@ const game = {
       riskTag.textContent = String(currentCost);
       riskTag.classList.toggle('graveyard__route-risk--rough', currentCost >= 3);
     });
-
     const limit = this.stormLimit ?? STORM_MIN;
     this.cargoValue.textContent = String(this.cargo);
     this.stormValue.textContent = `${this.storm} / ${limit}`;
@@ -396,7 +379,6 @@ const game = {
       return el('li', '', `${refit.name}: ${refit.effect}`);
     }));
     if (!this.refits.size) this.refitList.append(el('li', '', "Earn a passive refit by returning the Graveyard's Heart."));
-
     if (this.phase === 'delivered') {
       this.hint.textContent = `Cargo delivered · ${this.lastDelivery} salvage banked.${this.refitAward ? ` Refit earned: ${this.refitAward.name}.` : ''}${this.lastFragment ? ' Chart fragment secured.' : ''}${this.lastHeart ? ' The Graveyard\'s Heart is recovered.' : ''} Expedition ${this.expeditionNumber + 1} begins shortly.`;
     } else if (this.phase === 'lost') {
