@@ -4,6 +4,19 @@
   justify-items: center;
 }
 
+.hl__session-stats {
+  width: min(430px, 100%);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.hl__session-stat { display: flex; align-items: baseline; gap: 0.35rem; }
+.hl__session-label { color: var(--ink-3); font-size: 0.68rem; }
+.hl__session-value { color: var(--ink-2); font-family: var(--font-num); font-size: 0.78rem; }
+
 /* The pot — the stake, above the cards ------------------------------------- */
 
 .hl__pot {
@@ -71,7 +84,7 @@
 .hl__stats {
   width: min(430px, 100%);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid var(--line);
 }
 

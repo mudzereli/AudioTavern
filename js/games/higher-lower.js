@@ -10,9 +10,9 @@
    bank collects and carries on, and a miss loses only the pot. The pot and the
    streak are the only things that ever reset.
 
-   The pile is only a source of physical cards, so the same card cannot turn up
-   twice in a pair. Nothing is counted or displayed: the calls are read off the
-   table, and an ace or a two simply closes the side it cannot beat.
+  The pile is only a source of physical cards, so the same card cannot turn up
+  twice in a pair. Calls are read off the table, and an ace or a two simply
+  closes the side it cannot beat.
 
    This table draws its own buttons — two calls and a bank — so the shell hides
    its single-action bar.
@@ -47,6 +47,27 @@ const game = {
     const wrap = document.createElement('div');
     wrap.className = 'hl';
     this.wrap = wrap;
+
+    const sessionStats = document.createElement('div');
+    sessionStats.className = 'hl__session-stats';
+    const handsStat = document.createElement('div');
+    handsStat.className = 'hl__session-stat';
+    const handsLabel = document.createElement('span');
+    handsLabel.className = 'hl__session-label';
+    handsLabel.textContent = 'Hands played';
+    this.handsEl = document.createElement('strong');
+    this.handsEl.className = 'hl__session-value';
+    handsStat.append(handsLabel, this.handsEl);
+
+    const bestPotStat = document.createElement('div');
+    bestPotStat.className = 'hl__session-stat';
+    const bestPotLabel = document.createElement('span');
+    bestPotLabel.className = 'hl__session-label';
+    bestPotLabel.textContent = 'Biggest pot';
+    this.bestPotEl = document.createElement('strong');
+    this.bestPotEl.className = 'hl__session-value';
+    bestPotStat.append(bestPotLabel, this.bestPotEl);
+    sessionStats.append(handsStat, bestPotStat);
 
     // The pot is the stake, so it sits above the cards.
     this.potPanel = document.createElement('div');
@@ -127,18 +148,9 @@ const game = {
     this.nextPaysEl.className = 'hl__stat-value';
     nextStat.append(nextLabel, this.nextPaysEl);
 
-    const bestStat = document.createElement('div');
-    bestStat.className = 'hl__stat';
-    const bestLabel = document.createElement('span');
-    bestLabel.className = 'hl__stat-label';
-    bestLabel.textContent = 'Biggest pot';
-    this.bestPotEl = document.createElement('strong');
-    this.bestPotEl.className = 'hl__stat-value';
-    bestStat.append(bestLabel, this.bestPotEl);
+    stats.append(streakStat, nextStat);
 
-    stats.append(streakStat, nextStat, bestStat);
-
-    wrap.append(this.potPanel, pair, calls, this.bankBtn, stats);
+    wrap.append(sessionStats, this.potPanel, pair, calls, this.bankBtn, stats);
     ctx.stage.append(wrap);
   },
 
@@ -148,6 +160,7 @@ const game = {
     this.settled = false;
     this.lastCall = false;
     this.bestPot = 0;
+    this.handsPlayed = 0;
     this.streak = 0;
     this.pot = 0;
     this.revealed = null;
@@ -201,8 +214,14 @@ const game = {
     this.potEl.textContent = String(this.pot);
     this.streakEl.textContent = String(this.streak);
     this.nextPaysEl.textContent = String((this.streak + 1) ** 2);
+    this.handsEl.textContent = String(this.handsPlayed);
     this.bestPotEl.textContent = String(this.bestPot);
     this.bankValue.textContent = String(this.pot);
+  },
+
+  finishHand() {
+    this.handsPlayed += 1;
+    this.handsEl.textContent = String(this.handsPlayed);
   },
 
   /**
@@ -261,6 +280,7 @@ const game = {
   settleAtBell() {
     const ctx = this.ctx;
     const banked = this.pot;
+    if (this.phase !== 'banked' && this.phase !== 'busted') this.finishHand();
 
     // The clock has already set `settled`, and every beat now checks it, so
     // nothing queued can reopen the hand after this point. Without that, a beat
@@ -333,6 +353,7 @@ const game = {
     this.streak = 0;
     this.pot = 0;
     this.phase = 'busted';
+    this.finishHand();
 
     if (lost > 0) {
       this.potPanel.classList.add('hl__pot--lost');
@@ -388,6 +409,7 @@ const game = {
     this.pot = 0;
     this.streak = 0;
     this.phase = 'banked';
+    this.finishHand();
 
     this.potPanel.classList.add('hl__pot--banked');
     this.potEl.textContent = String(banked);
