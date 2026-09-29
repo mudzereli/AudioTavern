@@ -138,6 +138,7 @@ function catchChance(species, condition) {
   return species.rarity === 'Common' ? COMMON_CHANCE : UNCOMMON_CHANCE;
 }
 
+// Wording for the aria-label only; the visible rows show a bare percentage.
 function catchChanceLabel(species, condition) {
   const chance = formatPercent(catchChance(species, condition));
   if (species.rarity === 'Rare' && species.condition !== condition.id) {
@@ -181,7 +182,6 @@ const game = {
 
     const tallies = el('div', 'fishing__tallies');
     this.status = el('p', 'fishing__status');
-    this.rareStatus = el('p', 'fishing__rare-count', 'Rare: 0');
     const book = el('div', 'fishing__book');
     this.bookStatus = el('p', 'fishing__book-count', 'Set 1 · 0 / 12');
     this.bookProgress = el('div', 'fishing__book-progress');
@@ -195,7 +195,7 @@ const game = {
       return slot;
     });
     book.append(this.bookStatus, this.bookProgress);
-    tallies.append(this.status, this.rareStatus, book);
+    tallies.append(this.status, book);
     header.append(this.condition, tallies);
 
     this.float = el('div', 'fishing__float');
@@ -220,9 +220,9 @@ const game = {
       button.classList.add(`fishing__spot--${spot.id}`);
       const heading = el('span', 'fishing__spot-heading');
       const name = el('span', 'fishing__spot-name', spot.name);
-      const progress = el('span', 'fishing__spot-progress', '0 / 4');
-      const noBite = el('span', 'fishing__no-bite');
-      heading.append(name, progress, noBite);
+      // Which fish are still missing is already legible from the rows below: a row is a
+      // caught fish or a live one, so a second "2 / 4" above it says nothing new.
+      heading.append(name);
       button.append(heading, el('span', 'fishing__clue', spot.clue));
       const pool = el('span', 'fishing__pool');
       const entries = fishForSpot(spot).map((species) => {
@@ -233,16 +233,17 @@ const game = {
         const details = el('span', 'fishing__species-details');
         const name = el('span', 'fishing__fish-name', species.name);
         const odds = el('span', 'fishing__species-odds');
-        const count = el('span', 'fishing__species-count', '0');
+        // The landed mark is drawn by CSS: this element is the slot, not a readout.
+        const landed = el('span', 'fishing__species-count');
         details.append(name, odds);
-        entry.append(art, details, count);
+        entry.append(art, details, landed);
         pool.append(entry);
-        return { species, entry, name, odds, count };
+        return { species, entry, name, odds };
       });
       button.append(pool);
       button.addEventListener('click', () => this.cast(spot));
       this.spots.append(button);
-      this.spotViews.push({ spot, button, entries, progress, noBite });
+      this.spotViews.push({ spot, button, entries });
       return button;
     });
     this.wrap.append(header, this.setWin, this.float, this.spots);
@@ -262,7 +263,6 @@ const game = {
     this.phase = 'ready';
     this.casts = 0;
     this.bites = 0;
-    this.noBites = 0;
     this.rareCatches = 0;
     this.fishCounts = new Map(ALL_FISH.map((fish) => [fish.id, 0]));
     this.setNumber = 0;
@@ -405,7 +405,6 @@ const game = {
     this.casts += 1;
     this.currentSpot = null;
     if (!fish) {
-      this.noBites += 1;
       this.floatLabel.textContent = 'No bite this time.';
       this.float.className = 'fishing__float fishing__float--miss';
       this.ctx.message(this.floatLabel.textContent);
@@ -446,8 +445,7 @@ const game = {
 
   paint() {
     if (!this.spotButtons) return;
-    this.status.textContent = `${this.bites} landed · ${this.noBites} empty`;
-    this.rareStatus.textContent = `Rare: ${this.rareCatches}`;
+    this.status.textContent = `${this.bites} landed · ${this.rareCatches} rare`;
     this.bookStatus.textContent = `Set ${this.setNumber} · ${this.setFound.size} / ${SET_SIZE}`;
     this.bookProgress.setAttribute('aria-valuenow', String(this.setFound.size));
     this.bookSlots.forEach((slot, index) => (
@@ -460,31 +458,36 @@ const game = {
       && this.ctx.run.state === 'running'
       && this.ctx.run.remainingMs > CAST_MS + CAST_END_BUFFER_MS;
     this.spots.classList.toggle('fishing__spots--casting', this.phase === 'casting');
-    for (const { spot, button, entries, progress, noBite } of this.spotViews) {
+    for (const { spot, button, entries } of this.spotViews) {
       const available = this.pools.get(spot.id);
-      noBite.textContent = `No bite ${formatPercent(noBiteChance(spot, condition, available))}`;
+      const noBite = `No bite ${formatPercent(noBiteChance(spot, condition, available))}`;
       const castingHere = this.phase === 'casting' && spot === this.currentSpot;
       button.classList.toggle('fishing__spot--casting', castingHere);
       button.disabled = !canCast;
       const readableFish = [];
       let foundHere = 0;
-      for (const { species, entry, name, odds, count } of entries) {
+      for (const { species, entry, name, odds } of entries) {
         const isAvailable = available.has(species.id);
         const caught = this.setFound.has(species.id);
         const runCount = this.fishCounts.get(species.id) || 0;
         entry.hidden = !isAvailable;
         entry.classList.toggle('fishing__species--caught', caught);
         entry.classList.toggle('fishing__species--last-catch', isAvailable && species.id === this.lastCaughtId);
+        // The run tally only ever decides whether the x10 first-catch bonus is still
+        // there, so the slot shows a mark rather than a digit. The counts themselves are
+        // in the spot's aria-label below.
+        entry.classList.toggle('fishing__species--landed', runCount > 0);
         name.textContent = isAvailable ? species.name : '';
-        odds.textContent = isAvailable ? catchChanceLabel(species, condition) : '';
-        count.textContent = isAvailable ? String(runCount) : '';
+        // The percentage is the whole row. Rarity and the off-season note were two more
+        // tokens doing the same job, and the odds already rank themselves (40 / 20 / 18 /
+        // 10 / 2), so the wording lives on in the aria-label below.
+        odds.textContent = isAvailable ? formatPercent(catchChance(species, condition)) : '';
         if (isAvailable) {
           if (caught) foundHere += 1;
           readableFish.push(`${species.rarity} ${species.name}, ${caught ? 'collected this set' : 'not yet collected'}, ${runCount} caught this run, ${catchChanceLabel(species, condition)} chance`);
         }
       }
-      progress.textContent = `${foundHere} / ${FISH_PER_SPOT}`;
-      button.setAttribute('aria-label', `${spot.name}. ${spot.clue} ${noBite.textContent}. Four species available; ${readableFish.join('; ')}. Cast here.`);
+      button.setAttribute('aria-label', `${spot.name}. ${spot.clue} ${noBite}. ${foundHere} of ${FISH_PER_SPOT} caught here. ${readableFish.join('; ')}. Cast here.`);
     }
   },
 };
