@@ -1,24 +1,29 @@
 /* ---------------------------------------------------------------------------
    tokens.css — design tokens and base styles.
 
-   The look: near-black board, warm candlelight ink, one accent colour per
-   table. Each table page overrides --accent, and everything derived from it
-   (glows, borders, fills) follows automatically.
+   The look: near-black board, neutral greys, one accent colour per table. The base is
+   deliberately hue-free, because half the tables carry a cool accent (blue, teal, rose)
+   and half a warm one, so any tinted base fights whichever half disagrees with it — and
+   a table with several colours on screen at once (Gift Cart's six parcel tints) turns to
+   mud on it. Each table page overrides --accent, and everything derived from it (glows,
+   borders, fills) follows automatically.
    --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: dark;
 
-  --bg: #0a0908;
-  --bg-glow: #1b1410;
-  --panel: #151211;
-  --panel-2: #1d1917;
-  --line: #2c2624;
-  --line-soft: #221d1c;
+  /* A hair cool rather than dead grey: pure neutral beside saturated accents reads as
+     dirty, where a whisper of blue lets them pop. */
+  --bg: #0a0a0b;
+  --bg-glow: #17171a;
+  --panel: #131315;
+  --panel-2: #1b1b1e;
+  --line: #2c2c30;
+  --line-soft: #212124;
 
-  --ink: #f4efe8;
-  --ink-2: #b3a89d;
-  --ink-3: #786e64;
+  --ink: #f0f0f2;
+  --ink-2: #adadb3;
+  --ink-3: #74747b;
 
   --accent: #c9a227;
   --accent-ink: #191308;
@@ -97,7 +102,7 @@ a {
 }
 
 .btn:hover:not(:disabled) {
-  background: #251f1d;
+  background: #26262a;
 }
 
 .btn:active:not(:disabled) {
