@@ -36,6 +36,8 @@ const HOUSE_MAX = 9;
 
 /** Pause after a round ends, long enough to see what happened. */
 const BEAT_MS = 950;
+/** A leg result needs time to read before the next one begins. */
+const LEG_BEAT_MS = 2500;
 
 /** One lane of the race: a name, a bar, and the running number. */
 function raceLine(label, modifier, fill, num) {
@@ -140,7 +142,7 @@ const game = {
     this.renderRace();
 
     if (this.house >= HOUSE_TARGET) {
-      this.loseLeg(ctx, step);
+      this.loseLeg(ctx);
       return;
     }
 
@@ -190,7 +192,7 @@ const game = {
 
     // Take the leg before the house gets to move again.
     if (this.you >= HOUSE_TARGET) {
-      this.winLeg(ctx, banked);
+      this.winLeg(ctx);
       return;
     }
 
@@ -203,7 +205,7 @@ const game = {
 
   /* The only scoring in the table: what the house still had to travel when you
      crossed 100. Cheapest leg pays 1, a house that stalled pays near 100. */
-  winLeg(ctx, banked) {
+  winLeg(ctx) {
     const bonus = HOUSE_TARGET - this.house;
     this.locked = true;
     ctx.addPoints(bonus);
@@ -212,33 +214,28 @@ const game = {
 
     this.round = 0;
     this.die = null;
-    this.you = 0;
-    this.house = 0;
-    this.roundLabelEl.textContent = 'leg taken';
+    this.roundLabelEl.textContent = 'leg won · points';
     this.render();
+    this.totalEl.textContent = `+${bonus}`;
     this.renderRace();
 
-    ctx.message(
-      `Banked ${banked} to take the leg. The house had ${bonus} still to travel — ${bonus} ${plural(bonus, 'point', 'points')}.`,
-    );
-    this.settle(ctx);
+    ctx.message(`Leg won. +${bonus} ${plural(bonus, 'point', 'points')} added. Next leg starts shortly.`);
+    this.settle(ctx, LEG_BEAT_MS, true);
   },
 
-  loseLeg(ctx, step) {
+  loseLeg(ctx) {
     this.locked = true;
     ctx.setActionLabel('Roll');
     ctx.setActionEnabled(false);
 
     this.round = 0;
     this.die = null;
-    this.you = 0;
-    this.house = 0;
     this.roundLabelEl.textContent = 'leg lost';
     this.render();
     this.renderRace();
 
-    ctx.message(`The house takes ${step} and reaches 100 first. Nothing is lost — a new leg starts now.`);
-    this.settle(ctx);
+    ctx.message(`Leg lost. The house reached 100 first. Your score stays at ${ctx.run.score}. Next leg starts shortly.`);
+    this.settle(ctx, LEG_BEAT_MS, true);
   },
 
   finishBust(ctx, lost) {
@@ -268,17 +265,22 @@ const game = {
 
   renderRace() {
     this.houseFill.style.width = `${(this.house / HOUSE_TARGET) * 100}%`;
-    this.youFill.style.width = `${(this.you / HOUSE_TARGET) * 100}%`;
+    this.youFill.style.width = `${(Math.min(this.you, HOUSE_TARGET) / HOUSE_TARGET) * 100}%`;
     this.houseNum.textContent = String(this.house);
     this.youNum.textContent = String(this.you);
   },
 
-  settle(ctx) {
+  settle(ctx, delay = BEAT_MS, nextLeg = false) {
     clearTimeout(this.beat);
     this.beat = setTimeout(() => {
       if (!this.alive) return;
+      if (nextLeg) {
+        this.you = 0;
+        this.house = 0;
+        this.renderRace();
+      }
       this.newRound(ctx);
-    }, BEAT_MS);
+    }, delay);
   },
 };
 
