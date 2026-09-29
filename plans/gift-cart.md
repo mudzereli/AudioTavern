@@ -8,8 +8,10 @@ and no way to lose anything.
 ## Loop
 
 1. A trip deals a line of parcels as long as the crate has squares, then shows the first
-   three. `cols(trip) = min(4, 1 + ceil(trip / 2))`, so the crate is 3x2 (6 squares) on
-   trips 1-2, 3x3 (9) on trips 3-4, and 3x4 (12) from trip 5 on.
+   three. `cols(trip) = min(COLS_MAX, 1 + ceil(trip / 2))` with `COLS_MAX` 6, so the crate
+   gains a column every second trip: 3x2 (6 squares) on trips 1-2, 3x3 (9) on 3-4, 3x4 (12)
+   on 5-6, 3x5 (15) on 7-8, and 3x6 (18) from trip 9 on. Six columns is the widest that
+   still leaves every square a comfortable tap on a phone.
 2. Pick a parcel in the line, then a square. The tap names a square of the parcel — the
    square with the shape on the most sides of it, so a bar is taken by its middle and an L
    by its elbow, and rotating never moves which square is under the finger — and the rest
@@ -31,20 +33,34 @@ and no way to lose anything.
 | 1 | single | 1-2 |
 | 2 | domino | 3-5 |
 | 3 | 1x3 bar, L corner | 6-8 |
-| 4 | 2x2 square | 9-12 |
+| 4 | 2x2 square, T, 4-long L, S | 9-12 |
 
 Bigger parcels pay more per square but fit in fewer ways; small ones are cheap but flexible.
 Three crate rows is what makes the shape set worth turning — a bar stands upright in one
-column, and the corner and the square get real placement choices.
+column, and the corner, the square and the tetrominoes get real placement choices.
 
-Size mix, by trip: trips 1-2 draw singles and dominoes only; trips 3-5 add bars and corners;
-from trip 6 the 2x2 square is in the draw. Difficulty is packing, never a deadline.
+Since a size brings every shape of that size in at once, size 4's shapes are gated one at a
+time instead: the 2x2 square from trip 6 (the first trip size 4 is dealt at all), the T from
+7, the 4-long L from 9, the S from 11. `SHAPES` carries `from`, `shapePool()` filters on it,
+and an empty pool falls back to the whole size — `pick()` on an empty list returns
+`undefined` and the next paint throws reaching into it.
+
+Size mix, by trip: trips 1-2 draw singles and dominoes only (`{1: 4, 2: 6}`); trips 3-5 add
+bars and corners (`{1: 2, 2: 4, 3: 3}`); from trip 6 all four sizes are in (`{1: 1, 2: 3,
+3: 3, 4: 3}`). Difficulty is packing, never a deadline.
+
+The `1:` weight is the difficulty dial. A single is the only parcel that fits any hole —
+including the last one — so thinning singles out is what leaves a player holding three
+parcels that do not fit and setting off early. It is not monotonic: a line of nothing but
+singles fills any crate, and the value per square barely moves either way (bigger parcels pay
+more per square but also cover more squares, and the two roughly cancel). What it changes is
+how much slack the rolling hand has.
 
 ## Scoring
 
 - Every placed parcel pays its value when the trip is delivered.
-- A crate filled to its last square pays the trip **twice**. At 12 squares a strong crate is
-  roughly 25-30 raw and 50-60 doubled, which keeps the bonus within an order of magnitude of
+- A crate filled to its last square pays the trip **twice**. At 18 squares a strong crate is
+  roughly 35-45 raw and 70-90 doubled, which keeps the bonus within an order of magnitude of
   the gift total rather than swamping it.
 - Deals are random, so plenty of trips cannot fill exactly; there is deliberately no hint
   and no deal repair. Working out that a crate can still be filled is part of the read.
@@ -69,10 +85,20 @@ from trip 6 the 2x2 square is in the draw. Difficulty is packing, never a deadli
 - A parcel holds only the squares it actually took, so the empty corner of an L is still
   floor and another parcel can be laid in it. `fits()` tests a parcel's real cells, never
   its bounding box.
-- Art and value land on the middle of the shape, never the middle of the box the shape sits
-  in. A full rectangle's middle is the middle of its box (a domino is labelled on its seam,
-  a two-by-two on the point all four meet); a shape with a bite out of it takes the square
-  with the shape on the most sides of it, an L's elbow.
+- The crate is a **wooden box, not an accent-tinted panel** (user, 2026-09-28: "can we make
+  the crate less pink and more crate-like"). Frame, grain, rim, hollow squares and the four
+  corner nails all come from a local wood palette (`--wood`, `--wood-dark`, `--wood-edge`),
+  and the accent is left doing chrome only — the chips, the aim targets, the count and the
+  button. A full crate signals with **brass banding** (`--brass`) rather than a coloured
+  glow. The nails are a `::after` at `pointer-events: none`, which is load-bearing because it
+  covers the squares. Do not re-derive any of it from `--accent`.
+- A packed parcel shows one gift icon per square it took and no points at all. The icon
+  repeating is what says how many squares it covers, and the points stay where they can
+  still be acted on: on the chip in the line, and the crate's worth on the button. This is
+  also why there is no longer a "where does the label go" rule — the L's elbow answered it,
+  and one icon per square made the question go away. The icon is a share of the square
+  (`min(52%, 22px)`) rather than a fixed size, so the smaller squares of a six-column crate
+  shrink their icons with them instead of crowding the tile.
 - `Set off` is the shell's primary action, and the table takes it: `ctx.actionBar` is moved
   into the table's own column between the line and the hint, the way `bones`, `pig`,
   `danse-de-vampyr` and `assassins-bazaar` do it. Nothing about the button's behaviour

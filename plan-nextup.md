@@ -10,9 +10,10 @@ Last updated: 2026-09-28
 
 ## The Gift Cart — track 397, Homecoming (in progress)
 
-A packing game in **The Village**. The crate is a three-row grid that widens a column at a
-time (3x2 -> 3x3 -> 3x4), and villagers bring parcels up one at a time — single, domino,
-1x3 bar, L corner, 2x2 square — each covering that many squares and paying by size. Pick a
+A packing game in **The Village**. The crate is a three-row grid that widens a column every
+second trip (3x2 -> 3x3 -> 3x4 -> 3x5 -> 3x6), and villagers bring parcels up one at a time —
+single, domino, 1x3 bar, L corner, 2x2 square, then a T, a 4-long L and an S as the run goes
+on — each covering that many squares and paying by size. Pick a
 parcel, tap a square to lay it down, tap the parcel again to turn it; a packed parcel stays
 packed. A crate filled to its very last square pays the trip twice; `Set off`
 delivers, and a live trip settles a second before the bell.

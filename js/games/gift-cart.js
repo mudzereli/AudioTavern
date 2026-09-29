@@ -9,7 +9,7 @@ import { el, plural, svgEl, svgPath } from '../dom.js';
 import { pick, randInt, shuffle } from '../rng.js';
 
 const ROWS = 3;
-const COLS_MAX = 4;
+const COLS_MAX = 6;
 const HAND_SIZE = 3;
 const SETTLE_MS = 1200;
 const CLOCK_MS = 200;
@@ -25,13 +25,20 @@ const SIDES = [
   ['bottom', 0, 1, 'marginBottom'], ['left', -1, 0, 'marginLeft'],
 ];
 
-/** Parcels, by how many squares they take. Cells are written from 0,0. */
+/**
+ * Parcels, by how many squares they take. Cells are written from 0,0, and `from` is the
+ * first trip the shape can be dealt: one kind of parcel at a time joins the line, so the
+ * crate keeps offering something new to work out.
+ */
 const SHAPES = [
   { id: 'single', cells: [[0, 0]] },
   { id: 'domino', cells: [[0, 0], [1, 0]] },
   { id: 'bar', cells: [[0, 0], [1, 0], [2, 0]] },
   { id: 'corner', cells: [[0, 0], [0, 1], [1, 1]] },
   { id: 'square', cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
+  { id: 'tee', cells: [[0, 0], [1, 0], [2, 0], [1, 1]], from: 7 },
+  { id: 'ell', cells: [[0, 0], [0, 1], [0, 2], [1, 2]], from: 9 },
+  { id: 'snake', cells: [[1, 0], [2, 0], [0, 1], [1, 1]], from: 11 },
 ];
 
 /** What a parcel of each size is worth. Bigger pays more per square. */
@@ -107,17 +114,10 @@ function anchorOf(cells) {
   return [best.x, best.y];
 }
 
-const SHAPE_DATA = SHAPES.map(({ id, cells }) => {
+const SHAPE_DATA = SHAPES.map(({ id, cells, from }) => {
   const turns = orientations(cells);
-  return { id, size: cells.length, turns, anchors: turns.map(anchorOf) };
+  return { id, from: from || 1, size: cells.length, turns, anchors: turns.map(anchorOf) };
 });
-
-/** Where the art and value go: a full box's middle, an L's elbow. */
-function faceSpot(parcel) {
-  if (parcel.cells.length === parcel.w * parcel.h) return middleOf(parcel.cells);
-  const [x, y] = anchorOf(parcel.cells);
-  return { x: x + 0.5, y: y + 0.5 };
-}
 
 /** Walk a shape's box, handing the visitor each square and the shape's own test. */
 function eachSquare(cells, visit) {
@@ -139,11 +139,27 @@ function weightedSize(rng, weights) {
   return 1;
 }
 
-/** Trips 1-2 keep to singles and dominoes; the heavy shapes arrive later. */
+/**
+ * Trips 1-2 keep to singles and dominoes; the heavy shapes arrive later. Singles thin out
+ * as the run goes on, and that is the difficulty dial: a single is the only parcel that
+ * fits any hole, so a line with fewer of them is one that can leave you holding three
+ * parcels that do not fit and setting off early.
+ */
 function sizeWeights(trip) {
-  if (trip <= 2) return { 1: 5, 2: 5, 3: 0, 4: 0 };
-  if (trip <= 5) return { 1: 3, 2: 4, 3: 3, 4: 0 };
-  return { 1: 2, 2: 3, 3: 3, 4: 2 };
+  if (trip <= 2) return { 1: 4, 2: 6, 3: 0, 4: 0 };
+  if (trip <= 5) return { 1: 2, 2: 4, 3: 3, 4: 0 };
+  return { 1: 1, 2: 3, 3: 3, 4: 3 };
+}
+
+/**
+ * The shapes of one size this trip may deal. If every shape of that size is still gated,
+ * the whole size is offered rather than nothing: pick() on an empty list returns
+ * undefined, and the next paint throws reaching into it.
+ */
+function shapePool(size, trip) {
+  const ofSize = SHAPE_DATA.filter((item) => item.size === size);
+  const open = ofSize.filter((item) => item.from <= trip);
+  return open.length > 0 ? open : ofSize;
 }
 
 /** A line as long as the crate has squares, so it always overfills the crate. */
@@ -156,7 +172,7 @@ function dealParcels(rng, squares, trip) {
     const [low, high] = VALUES[size];
     line.push({
       id: `${trip}-${index}`, kind: kinds[index % kinds.length], turn: 0, size,
-      shape: pick(rng, SHAPE_DATA.filter((item) => item.size === size)),
+      shape: pick(rng, shapePool(size, trip)),
       value: randInt(rng, low, high),
     });
   }
@@ -386,9 +402,10 @@ const game = {
   },
 
   /**
-   * A parcel is drawn as the squares it took, never as a block over its footprint:
-   * only its outside is inked, so an L reads as an L and its empty square as floor.
-   * A packed parcel cannot be taken back, so it is a picture and not a control.
+   * A parcel is drawn as the squares it took, one gift icon each and only its outside
+   * inked, so an L reads as an L and its empty square as floor. It is a picture and not
+   * a control: the points are on the chip in the line and the crate's worth is on the
+   * button, where they can still be acted on.
    */
   buildParcel(parcel) {
     const node = el('div', 'gift__parcel');
@@ -415,17 +432,9 @@ const game = {
         tile.classList.toggle(`gift__tile--${name}`, !shared);
         if (shared) tile.style[margin] = BLEED;
       }
+      tile.append(this.buildArt(parcel.gift));
       node.append(tile);
     });
-
-    // The art and the value sit on the middle of the shape.
-    const spot = faceSpot(parcel);
-    const face = el('span', 'gift__face');
-    face.setAttribute('aria-hidden', 'true');
-    face.style.left = `${(spot.x / parcel.w) * 100}%`;
-    face.style.top = `${(spot.y / parcel.h) * 100}%`;
-    face.append(this.buildArt(parcel.gift), el('span', 'gift__parcel-value', String(parcel.gift.value)));
-    node.append(face);
     return node;
   },
 
