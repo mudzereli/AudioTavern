@@ -50,23 +50,36 @@ const game = {
     this.totalEl.className = 'bones__total';
     rollRow.append(this.diceEl, this.totalEl);
 
-    const record = document.createElement('div');
-    record.className = 'bones__record';
-    const recordLabel = document.createElement('span');
-    recordLabel.className = 'bones__record-label';
-    recordLabel.textContent = 'Most boxes shut in one round';
+    const stats = document.createElement('div');
+    stats.className = 'bones__stats';
+    const best = document.createElement('div');
+    best.className = 'bones__stat';
+    const bestLabel = document.createElement('span');
+    bestLabel.className = 'bones__stat-label';
+    bestLabel.textContent = 'Best boxes';
     this.recordEl = document.createElement('strong');
-    this.recordEl.className = 'bones__record-value';
-    record.append(recordLabel, this.recordEl);
+    this.recordEl.className = 'bones__stat-value';
+    best.append(bestLabel, this.recordEl);
+    const rounds = document.createElement('div');
+    rounds.className = 'bones__stat';
+    const roundsLabel = document.createElement('span');
+    roundsLabel.className = 'bones__stat-label';
+    roundsLabel.textContent = 'Rounds played';
+    this.roundsEl = document.createElement('strong');
+    this.roundsEl.className = 'bones__stat-value';
+    rounds.append(roundsLabel, this.roundsEl);
+    stats.append(rounds, best);
 
-    wrap.append(grid, rollRow, ctx.actionBar, record);
+    wrap.append(stats, grid, rollRow, ctx.actionBar);
     ctx.stage.append(wrap);
   },
 
   start(ctx) {
     this.alive = true;
     this.bestRoundShut = 0;
+    this.roundsPlayed = 0;
     this.recordEl.textContent = '0';
+    this.roundsEl.textContent = '0';
     this.newRound(ctx);
   },
 
@@ -195,6 +208,8 @@ const game = {
   },
 
   endRound(ctx) {
+    this.roundsPlayed += 1;
+    this.roundsEl.textContent = String(this.roundsPlayed);
     ctx.addPoints(this.shut);
     clearTimeout(this.beat);
     this.beat = setTimeout(() => {

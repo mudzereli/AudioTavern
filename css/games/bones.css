@@ -22,17 +22,18 @@
   color: var(--accent);
 }
 
-.bones__record {
+.bones__stats {
   width: min(360px, 100%);
-  display: grid;
-  justify-items: center;
-  gap: 0.2rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0 0.35rem;
+  border-bottom: 1px solid var(--line);
 }
 
-.bones__record-label { font-size: 0.78rem; color: var(--ink-2); text-align: center; }
-.bones__record-value { font-family: var(--font-num); font-size: 1.6rem; color: var(--accent); }
+.bones__stat { display: flex; align-items: baseline; gap: 0.35rem; }
+.bones__stat-label { color: var(--ink-3); font-size: 0.68rem; }
+.bones__stat-value { color: var(--ink-2); font-family: var(--font-num); font-size: 0.78rem; }
 
 .tiles {
   width: min(360px, 100%);
