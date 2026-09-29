@@ -102,7 +102,7 @@ export function createRun({ durationMs = RUN_MS, onTick, onEnd } = {}) {
       begin();
     },
 
-    /** Hold the clock. Used when the tab is hidden. */
+    /** Hold the clock — used when the page is being put away, never for a hidden tab. */
     pause() {
       if (state !== 'running') return;
       tick(); // settle the time that elapsed before we noticed
@@ -112,8 +112,13 @@ export function createRun({ durationMs = RUN_MS, onTick, onEnd } = {}) {
       emit();
     },
 
+    /**
+     * Carry on from where the run stopped: a tab that went hidden, or a saved run that was
+     * restored onto the idle board. Both are the same move, and this key used to be declared
+     * twice — the second one silently deleted the paused-tab branch.
+     */
     resume() {
-      if (state !== 'paused') return;
+      if (state !== 'paused' && state !== 'idle') return;
       state = 'running';
       begin();
     },
@@ -142,13 +147,6 @@ export function createRun({ durationMs = RUN_MS, onTick, onEnd } = {}) {
       score = snapshot.score;
       remainingMs = Math.min(snapshot.remainingMs, durationMs);
       emit();
-    },
-
-    /** Resume a restored idle run without resetting its score or time. */
-    resume() {
-      if (state !== 'idle') return;
-      state = 'running';
-      begin();
     },
 
     addPoints(points) {

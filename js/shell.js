@@ -2,8 +2,12 @@
    shell.js — the contract every table implements.
 
    The shell owns everything that is the same at every table: the header, the
-   countdown, the score, the overlay that starts and ends a run, the sound
-   link, and pausing when the tab is hidden.
+   countdown, the score, the overlay that starts and ends a run, the sound link,
+   and carrying on when the tab is hidden. The ten minutes are wall-clock
+   minutes: hide the tab and the clock keeps counting and the track keeps
+   playing, so the night is the same length either way. A table that cannot be
+   played while hidden (anything you have to react to) says so itself, by
+   stopping its own loop on document.hidden.
 
    A game only has to provide:
      mount(ctx)   build its DOM once, into ctx.stage
@@ -376,6 +380,9 @@ export function mountShell(config, game) {
     persistProgress(true);
   });
 
+  // Deliberately no visibilitychange handling: hiding the tab is not leaving the night. The
+  // clock runs on performance.now() and the track keeps playing, so the run continues at full
+  // speed behind other windows — and for a table that keeps producing, so does the board.
   window.addEventListener('pageshow', (event) => {
     if (event.persisted && run.state === 'paused') run.resume();
   });

@@ -378,6 +378,22 @@ export const GAMES = [
       soundUrl: SOUND_HOME,
     },
   },
+  {
+    id: 'moonshine',
+    title: 'Moonshine',
+    tagline: "Spend the night's takings",
+    category: 'wilds',
+    accent: '#b8863b',
+    scoreLabel: 'bottles',
+    rules:
+      'Four chains of upgrades, one lever each: the still, the buyers, the mash and the shed. A bottle scores the moment it comes off the kettle, sold or not, and the money to buy with comes from selling them — by hand, one bottle at a time, or through the customers you pay for. A full shed stalls the still.',
+    actionLabel: 'Sell a bottle',
+    track: {
+      title: 'Distilled: Backwoods',
+      audioUrl: 'https://sounds.tabletopaudio.com/323_Distilled_Backwoods.mp3',
+      soundUrl: SOUND_HOME,
+    },
+  },
 ];
 
 export function gameById(id) {

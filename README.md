@@ -54,8 +54,9 @@ folder to any static host — no compilation, no dependencies.
 | Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed rite brings a longer route. | Wizard's Tower |
 | Fishing Village | Catchbook fishing | Cast through shifting day, night, and weather; fill 18 fish slots for first-catch rewards. | Fishing Village |
 | The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. A crate filled to its last square pays the trip twice. | Homecoming |
+| Moonshine | Upgrade economy | A backyard still, a shed of bottles and four chains of upgrades bought out of the night's takings: the score is the bottles the still makes, and every row prints what its next step changes and nothing else. | Distilled: Backwoods |
 
-The hub shows one flat list — a compact row per table — because eighteen tables across nine
+The hub shows one flat list — a compact row per table — because nineteen tables across nine
 wings is too many wings to spend a section heading and a blurb on each. A wing is a **label on
 the row** instead of a section, so the whole catalogue fits in about two screens on a phone.
 Wings are defined in `CATEGORIES` in the same file. There are nine so far — **The Tavern**,
@@ -102,8 +103,8 @@ site. Keep audio hosted there and unmodified, and retain the visible attribution
 
 Because the link is generic, the **track name** is what identifies the sound. It appears
 on the hub card, in the table header and on the start panel. The "Start run & play track"
-button starts the in-page audio and game clock from the same click. Both pause when the
-game tab is hidden and resume when it returns.
+button starts the in-page audio and game clock from the same click. Both keep running when
+the game tab is hidden, so the night is the same length whichever window you are watching.
 
 Run length lines up with theirs by design: a run is ten minutes, which is exactly how long
 one of their tracks lasts.
@@ -154,7 +155,7 @@ shell.
 - **The hub is a menu, not a manual.** A hub row carries the wing label, the
   title, one combined tagline-and-track line, and the score column. It does not
   carry the rules: `config.rules` is read on the play page's start panel, and a
-  paragraph on every one of eighteen rows is what made the hub a long
+  paragraph on every one of nineteen rows is what made the hub a long
   unnavigable scroll. Rows are one per row on a phone, then two and three
   columns at 620px and 960px — the column steps are explicit, not `auto-fill`,
   so a phone is always a single column.
@@ -173,8 +174,10 @@ shell.
 
 - Each table has its own best score, stored under `ttagames.best.<id>`. There is no
   currency and no shared purse — nothing to manage and no way to get stuck.
-- The 10:00 clock pauses whenever the tab loses visibility, so switching to the
-  Tabletop Audio tab does not burn your run.
+- The 10:00 clock is wall-clock time, hidden tab or not: it keeps counting while the
+  game tab is in the background, and the track keeps playing with it. Tables you have to
+  react to stop their own boards while hidden — the clock does not wait for them, so
+  switch away in one of those and you come back to less night.
 - Everything is played with a mouse or a finger. No table binds a shortcut key:
   every control is a button, so the whole site works on a touch screen. Buttons
   stay focusable, so Tab and Space still work for anyone who wants them — that is
