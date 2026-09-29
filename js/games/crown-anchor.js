@@ -27,7 +27,7 @@ const DICE_COUNT = 5;
 const BEAT_MS = 1000;
 
 const REROLL_HINT = 'one reroll \u2014 tap a die';
-const COLLECT_HINT = 'choose a symbol to collect its pot';
+const COLLECT_HINT = 'choose a symbol to collect';
 
 function renderSymbolDie(symbol, isHit, onReroll) {
   const die = document.createElement('button');
@@ -58,7 +58,7 @@ const game = {
     this.diceEl.className = 'ca__dice';
 
     this.promptEl = document.createElement('p');
-    this.promptEl.className = 'cap';
+    this.promptEl.className = 'cap ca__prompt';
     this.promptEl.textContent = COLLECT_HINT;
 
     this.symbolsEl = document.createElement('div');
