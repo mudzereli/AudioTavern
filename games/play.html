@@ -41,7 +41,8 @@
           error.hidden = true;
           shell.hidden = false;
           mountShell(config, gameModule.default);
-        } catch {
+        } catch (loadError) {
+          console.error(`Could not load table "${id}".`, loadError);
           error.setAttribute('role', 'alert');
           error.querySelector('.message').textContent = 'This table could not be loaded.';
         }

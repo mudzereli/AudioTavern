@@ -1,76 +1,35 @@
-/* ---------------------------------------------------------------------------
-   Danse de Vampyr - dance while the orchestra plays, and do not move when the
-   measure resolves.
-
-   The track itself never stops. Each danse runs on its own internal beat
-   clock; when the measure resolves the hall goes rigid and a single step is
-   noticed by the host. Grace is banked only on a survived hold, and hitting two
-   beats in three is what raises the multiplier. The orchestra quickens with the
-   multiplier, so the music rises and eases with your standing.
-   --------------------------------------------------------------------------- */
-
 import { el, plural } from '../dom.js';
 
-/* The cue is redrawn on this interval, while a press is judged against the true
-   beat. A long tick makes the flash stutter against its own window, so keep
-   this well under the tolerance at the fastest tempo. */
 const TICK_MS = 20;
 
-/** Tempo follows the multiplier, and the floor is reached at the top of it. A
-    catch costs one level, so it eases the music by a single step rather than
-    slamming it back — which also makes the danse you must climb back on a little
-    kinder than the one you lost. */
 const START_BEAT_MS = 780;
-const TEMPO_STEP_MS = 52;
-const MIN_BEAT_MS = 520;
+const ACT_TEMPO_STEP_MS = 30;
+const MULTIPLIER_TEMPO_STEP_MS = 12;
+const MIN_BEAT_MS = 560;
 
-/** How much of a beat counts as being in time. A fraction of the beat, so the
-    timing stays equally demanding as the tempo rises. */
-const TOLERANCE_RATIO = 0.2;
-const MIN_TOLERANCE_MS = 95;
-
-/** How long the landing ring stays lit, as a fraction of the beat, on either
-    side of the beat. The whole flash sits inside the timing tolerance, so a step
-    taken the moment it lights up always counts. */
-const BEAT_FLASH_RATIO = 0.18;
-
-/** The size of the target ring around the chandelier, as a fraction of the
-    metronome. The beat ring contracts inward and sits exactly here while the
-    flash is lit, so the two rings are concentric at every beat. */
-const APPROACH_LAND_SCALE = 0.7;
-
-/** Forgive a press that was already in flight when the measure resolved. */
 const HOLD_GRACE_MS = 170;
 
-/** The hold: generous early, never a formality later. */
 const HOLD_START_MS = 1500;
 const HOLD_STEP_MS = 50;
 const MIN_HOLD_MS = 1100;
 
-/** Each danse's length is random and grows, so the resolve cannot be counted. */
-const MIN_DANSE_BEATS = 4;
 const MAX_DANSE_BEATS_START = 7;
 const MAX_DANSE_BEATS_FINAL = 12;
 
 const MULTIPLIER_CAP = 10;
-
-/** The share of a danse's beats you must hit for the multiplier to rise. A beat
-    you miss counts whether the press was clumsy or never made, so this is the
-    only thing a danse is judged on — there is no clean or unclean state, just a
-    count. The resolve's leading flash is hittable too, which makes the bar a
-    touch forgiving. */
-const BEATS_REQUIRED_RATIO = 2 / 3;
-
-/** Pause on the failure and success screens, long enough to read them. */
 const SETTLE_MS = 950;
+const ACTS = ['The Invitation', 'Hesitation', 'The Mirror', 'Masquerade', 'Grand Dance'];
+const ACT_PATTERN_COUNTS = [1, 2, 4, 6, 8];
+const PATTERNS = [
+  [1, 1, 1, 1], [1, 0, 1, 0], [1, 1, 0, 1], [1, 0, 0, 1],
+  [0, 1, 1, 0], [1, 0, 1, 1], [0, 1, 0, 1], [0, 0, 1, 1],
+];
 
 const game = {
   id: 'danse-de-vampyr',
 
   mount(ctx) {
     this.ctx = ctx;
-    this.reducedMotion = typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const wrap = el('section', 'danse');
     wrap.setAttribute('role', 'group');
@@ -79,13 +38,10 @@ const game = {
     const readout = el('div', 'danse__readout');
 
     const grace = el('div', 'danse__stat');
-    grace.append(el('span', 'danse__label', 'Grace this danse'));
+    grace.append(el('span', 'danse__label', 'Graceca'));
     this.graceValue = el('strong', 'danse__value', '0');
     grace.append(this.graceValue);
 
-    // Steps, not a streak: the streak had no mechanical effect, and two counters
-    // of the same unit under two different names was most of what made the
-    // readout unreadable.
     const steps = el('div', 'danse__stat');
     steps.append(el('span', 'danse__label', 'Steps'));
     this.stepsValue = el('strong', 'danse__stat-value', '0');
@@ -109,8 +65,27 @@ const game = {
     arches.setAttribute('aria-hidden', 'true');
     for (let index = 0; index < 3; index += 1) arches.append(el('span', 'danse__arch'));
 
-    this.chandelier = el('div', 'danse__chandelier');
-    this.chandelier.setAttribute('aria-hidden', 'true');
+    this.phrase = el('div', 'danse__phrases');
+    const currentMeasure = el('div', 'danse__measure');
+    currentMeasure.append(el('span', 'danse__measure-label', 'NOW'));
+    this.currentMeasureCues = el('div', 'danse__measure-cues');
+    this.phraseSlots = Array.from({ length: 4 }, (_, index) => {
+      const slot = el('span', 'danse__cue', 'STEP');
+      slot.dataset.beat = String(index + 1);
+      return slot;
+    });
+    this.playhead = el('span', 'danse__playhead');
+    this.playhead.setAttribute('aria-hidden', 'true');
+    this.currentMeasureCues.append(...this.phraseSlots, this.playhead);
+    currentMeasure.append(this.currentMeasureCues);
+
+    const nextMeasure = el('div', 'danse__measure danse__measure--next');
+    this.nextMeasureLabel = el('span', 'danse__measure-label', 'NEXT');
+    const nextMeasureCues = el('div', 'danse__measure-cues');
+    this.nextPhraseSlots = Array.from({ length: 4 }, () => el('span', 'danse__cue danse__cue--preview', 'STEP'));
+    nextMeasureCues.append(...this.nextPhraseSlots);
+    nextMeasure.append(this.nextMeasureLabel, nextMeasureCues);
+    this.phrase.append(nextMeasure, currentMeasure);
 
     const floor = el('div', 'danse__floor');
     floor.setAttribute('aria-hidden', 'true');
@@ -130,19 +105,12 @@ const game = {
     this.stateLabel = el('p', 'danse__state', 'The orchestra plays');
     this.stateLabel.setAttribute('aria-live', 'polite');
 
-    // The chandelier marks the beat: a ring closes on it and lands as you step.
-    const metronome = el('div', 'danse__metronome');
-    metronome.setAttribute('aria-hidden', 'true');
-    this.approachRing = el('span', 'danse__approach');
-    this.beatTarget = el('span', 'danse__target');
-    metronome.append(this.approachRing, this.chandelier, this.beatTarget);
-
-    hall.append(arches, metronome, floor, this.dancers, this.host, this.stateLabel);
+    hall.append(arches, floor, this.dancers, this.host, this.stateLabel, this.phrase);
 
     this.hint = el(
       'p',
       'danse__hint',
-      'The ring closes in on the chandelier and flashes on the beat \u2014 step as it flashes. When the music stops, hold still.',
+      'Only NOW is playable; NEXT is a preview. Step on active STEP beats, stay still for WATCH, then hold when the music stops.',
     );
 
     wrap.append(readout, hall, ctx.actionBar, this.hint);
@@ -150,7 +118,6 @@ const game = {
     ctx.stage.append(wrap);
     this.wrap = wrap;
 
-    // A hidden tab must not burn through a hold in the player's absence.
     document.addEventListener('visibilitychange', () => this.handleVisibility());
   },
 
@@ -159,9 +126,20 @@ const game = {
     this.multiplier = 1;
     this.survived = 0;
     this.danseNumber = 0;
+    this.actIndex = -1;
+    this.patternDeck = [];
+    this.lastPattern = -1;
     this.previousBeatInterval = null;
     this.hiddenAt = null;
-    this.newDanse(ctx);
+    this.steps = 0;
+    this.phase = 'ready';
+    this.phrase.hidden = true;
+    this.stateLabel.textContent = 'The orchestra is ready';
+    this.hint.textContent = 'Press Start when you are ready.';
+    ctx.setActionLabel('Start');
+    ctx.setActionEnabled(true);
+    ctx.message('Press Start when you are ready.');
+    this.paint();
   },
 
   stop() {
@@ -169,54 +147,136 @@ const game = {
     this.phase = 'stopped';
     this.stopClock();
     clearTimeout(this.settleTimer);
+    clearTimeout(this.hitFlashTimer);
     if (this.wrap) {
-      this.wrap.classList.remove('danse--dance', 'danse--hold', 'danse--tell', 'danse--beat');
+      this.wrap.classList.remove('danse--dance', 'danse--hold', 'danse--tell', 'danse--hit');
       this.wrap.classList.add('danse--stopped');
     }
     if (this.ctx) this.ctx.setActionEnabled(false);
   },
 
-  /* ------------------------------------------------------------ one danse */
-
   newDanse(ctx) {
     clearTimeout(this.settleTimer);
+    clearTimeout(this.hitFlashTimer);
+    this.wrap.classList.remove('danse--hit');
     this.danseNumber += 1;
     this.steps = 0;
     this.lastPressBeat = -1;
     this.toldFalter = false;
 
-    // Tempo follows the multiplier; danse length and hold length keep climbing
-    // with the night itself.
-    this.beatInterval = Math.max(MIN_BEAT_MS, START_BEAT_MS - (this.multiplier - 1) * TEMPO_STEP_MS);
+    const elapsed = ctx.run.durationMs - ctx.run.remainingMs;
+    const act = Math.min(ACTS.length - 1, Math.floor(elapsed * ACTS.length / ctx.run.durationMs));
+    const actChanged = act !== this.actIndex;
+    if (actChanged) {
+      this.actIndex = act;
+      this.patternDeck = [];
+      this.wrap.dataset.act = String(act);
+    }
+
+    this.beatInterval = Math.max(
+      MIN_BEAT_MS,
+      START_BEAT_MS - this.actIndex * ACT_TEMPO_STEP_MS - (this.multiplier - 1) * MULTIPLIER_TEMPO_STEP_MS,
+    );
     const mostBeats = Math.min(MAX_DANSE_BEATS_FINAL, MAX_DANSE_BEATS_START + this.survived);
-    this.danseBeats = MIN_DANSE_BEATS + Math.floor(ctx.rng() * (mostBeats - MIN_DANSE_BEATS + 1));
+    this.danseBeats = 4 * (1 + Math.floor(ctx.rng() * Math.ceil(mostBeats / 4)));
+    this.dansePattern = [];
+    this.bars = [];
+    for (let bar = 0; bar < this.danseBeats / 4; bar += 1) {
+      const pattern = this.danseNumber === 1 ? 0 : this.drawPattern(ctx);
+      this.lastPattern = pattern;
+      this.bars.push(pattern);
+      this.dansePattern.push(...PATTERNS[pattern]);
+    }
+    this.beatResults = Array(this.danseBeats);
+    this.activeBar = -1;
+    this.previewBar = -1;
+    this.activeBeat = -1;
+    this.activeStepIndex = -1;
     this.holdMs = Math.max(MIN_HOLD_MS, HOLD_START_MS - this.survived * HOLD_STEP_MS);
     this.stepPose = false;
     this.holdStartedAt = 0;
 
     this.phase = 'dance';
-    // One beat of count-in, so the downbeat is never a surprise.
+    this.phrase.hidden = false;
     this.beatOrigin = performance.now() + this.beatInterval;
 
-    this.wrap.classList.remove('danse--survived', 'danse--caught', 'danse--hold', 'danse--tell', 'danse--beat');
+    this.wrap.classList.remove('danse--survived', 'danse--caught', 'danse--hold', 'danse--tell');
     this.dancers.classList.remove('danse__dancers--step');
-    this.stateLabel.textContent = 'The orchestra plays';
-    this.hint.textContent = this.danseNumber === 1
-      ? 'The ring closes in and flashes on the beat \u2014 step as it flashes.'
-      : 'Step as the ring flashes on the chandelier.';
+    this.stateLabel.textContent = ACTS[this.actIndex];
+    this.hint.textContent = 'Only NOW is playable; NEXT is a preview. Step on active STEP beats and stay still for WATCH.';
     // The button never asks to be pressed, so it keeps one label all night.
     ctx.setActionLabel('Step');
     ctx.setActionEnabled(true);
     const quickened = this.previousBeatInterval === null
       || this.beatInterval < this.previousBeatInterval;
     this.previousBeatInterval = this.beatInterval;
-    ctx.message(this.danseNumber === 1
-      ? 'The orchestra begins. Step on the beat, and be still when the measure resolves.'
+    ctx.message(`${actChanged ? `${ACTS[this.actIndex]}. ` : ''}${this.danseNumber === 1
+      ? 'The orchestra begins. Step on called beats, and be still when the measure resolves.'
       : quickened
         ? `Danse ${this.danseNumber}. The orchestra quickens with your multiplier.`
-        : `Danse ${this.danseNumber}. A slower measure \u2014 the multiplier is \u00d7${this.multiplier}.`);
+        : `Danse ${this.danseNumber}. A slower measure \u2014 the multiplier is \u00d7${this.multiplier}.`}`);
+    this.showPhrase(0, false);
     this.paint();
     this.startClock();
+  },
+
+  drawPattern(ctx) {
+    if (!this.patternDeck.length) {
+      this.patternDeck = Array.from({ length: ACT_PATTERN_COUNTS[this.actIndex] }, (_, index) => index);
+      for (let index = this.patternDeck.length - 1; index > 0; index -= 1) {
+        const other = Math.floor(ctx.rng() * (index + 1));
+        [this.patternDeck[index], this.patternDeck[other]] = [this.patternDeck[other], this.patternDeck[index]];
+      }
+      const last = this.patternDeck.length - 1;
+      if (last > 0 && this.patternDeck[last] === this.lastPattern) {
+        [this.patternDeck[0], this.patternDeck[last]] = [this.patternDeck[last], this.patternDeck[0]];
+      }
+    }
+    this.lastPattern = this.patternDeck.pop();
+    return this.lastPattern;
+  },
+
+  showPhrase(beatIndex, active = true) {
+    const bar = Math.floor(beatIndex / 4);
+    if (bar !== this.activeBar) {
+      this.phraseSlots.forEach((slot, index) => {
+        const step = PATTERNS[this.bars[bar]][index] === 1;
+        slot.textContent = step ? 'STEP' : 'WATCH';
+        slot.setAttribute('aria-label', step ? 'Step on the beat' : 'The host is watching; stay still');
+        slot.classList.toggle('danse__cue--step', step);
+        slot.classList.toggle('danse__cue--watch', !step);
+      });
+      this.activeBar = bar;
+    }
+    const nextBar = bar + 1;
+    if (nextBar !== this.previewBar) {
+      const patternIndex = this.bars[nextBar];
+      const resolvesToHold = patternIndex == null;
+      this.nextMeasureLabel.textContent = resolvesToHold ? 'THEN' : 'NEXT';
+      this.nextPhraseSlots.forEach((slot, index) => {
+        const step = !resolvesToHold && PATTERNS[patternIndex][index] === 1;
+        slot.textContent = resolvesToHold ? 'HOLD' : step ? 'STEP' : 'WATCH';
+        slot.setAttribute('aria-label', resolvesToHold
+          ? 'Hold still when the music stops'
+          : step ? 'Upcoming step on the beat' : 'Upcoming beat: stay still');
+        slot.classList.toggle('danse__cue--step', step);
+        slot.classList.toggle('danse__cue--watch', !step && !resolvesToHold);
+        slot.classList.toggle('danse__cue--hold', resolvesToHold);
+      });
+      this.previewBar = nextBar;
+    }
+    if (!active) {
+      this.phraseSlots.forEach((slot) => slot.classList.remove('danse__cue--active'));
+      this.activeBeat = -1;
+      this.activeStepIndex = -1;
+      return;
+    }
+    this.activeStepIndex = beatIndex;
+    const activeSlot = beatIndex % 4;
+    if (activeSlot !== this.activeBeat) {
+      this.phraseSlots.forEach((slot, index) => slot.classList.toggle('danse__cue--active', index === activeSlot));
+      this.activeBeat = activeSlot;
+    }
   },
 
   startClock() {
@@ -238,28 +298,40 @@ const game = {
     if (this.phase === 'dance') {
       const elapsed = now - this.beatOrigin;
       if (elapsed < 0) {
-        // The count-in is an ordinary beat with its opening flash suppressed:
-        // the ring contracts and lands on the target, and the downbeat's own
-        // flash straddles the beat as usual. Parking the ring at full size for
-        // the whole count-in is what made the opening step arrive unannounced.
-        this.paintBeat(elapsed + this.beatInterval, true);
+        this.currentMeasureCues.style.setProperty('--phrase-progress', '0%');
+        this.showPhrase(0, false);
         return;
       }
       const beatIndex = Math.floor(elapsed / this.beatInterval);
+      let missedStep = false;
+      for (let beat = this.activeStepIndex; beat < Math.min(beatIndex, this.danseBeats); beat += 1) {
+        if (this.dansePattern[beat] && this.beatResults[beat] !== true) {
+          this.beatResults[beat] = false;
+          missedStep = true;
+        }
+      }
+      if (missedStep && this.multiplier !== 1) {
+        this.multiplier = 1;
+        this.paint();
+      }
       if (beatIndex >= this.danseBeats) {
         this.beginHold(now);
         return;
       }
+      const cueBeat = beatIndex;
+      this.showPhrase(cueBeat);
+      this.wrap.classList.toggle('danse--watch', this.dansePattern[cueBeat] === 0);
+      this.currentMeasureCues.style.setProperty(
+        '--phrase-progress',
+        `${((beatIndex % 4 + (elapsed / this.beatInterval - beatIndex)) / 4) * 100}%`,
+      );
 
-      // The guests step on every beat, so a beat that never lands is unmissable.
       const pose = beatIndex % 2 === 1;
       if (pose !== this.stepPose) {
         this.stepPose = pose;
         this.dancers.classList.toggle('danse__dancers--step', pose);
       }
 
-      // Every danse warns a beat before it resolves. When that happens is still
-      // random, so the resolve still cannot be counted.
       if (!this.toldFalter && beatIndex === this.danseBeats - 1) {
         this.toldFalter = true;
         this.wrap.classList.add('danse--tell');
@@ -267,41 +339,18 @@ const game = {
         this.ctx.message('The music falters \u2014 be ready to stop.');
       }
 
-      this.paintBeat(elapsed - beatIndex * this.beatInterval);
       return;
     }
 
     if (this.phase === 'hold' && now >= this.holdEndsAt) this.survive();
   },
 
-  /* `countIn` runs the same contraction as any other beat; it only drops the
-     flash that would otherwise open the danse out of nowhere. The downbeat's
-     flash still straddles the beat, so the first step is cued like every later
-     one — including the early half of its window. */
-  paintBeat(positionWithinBeat, countIn = false) {
-    const ratio = Math.max(0, Math.min(1, positionWithinBeat / this.beatInterval));
-    const flashStart = 1 - BEAT_FLASH_RATIO;
-
-    // The flash straddles the beat: from a fraction before it to the same
-    // fraction after, so the cue is centred on the moment you must step.
-    const flashing = ratio >= flashStart || (!countIn && ratio <= BEAT_FLASH_RATIO);
-    this.wrap.classList.toggle('danse--beat', flashing);
-
-    if (this.reducedMotion) return;
-
-    // While the flash is lit the ring sits exactly on the target, so the two
-    // rings are always concentric at the beat. The rest of the beat is a single
-    // inward contraction, from full size back down to the target. Clamped, so a
-    // count-in parks the ring at full size rather than overshooting it.
-    const contraction = Math.max(0, Math.min(1, (ratio - BEAT_FLASH_RATIO) / (flashStart - BEAT_FLASH_RATIO)));
-    const scale = flashing ? APPROACH_LAND_SCALE : 1 - (1 - APPROACH_LAND_SCALE) * contraction;
-    this.approachRing.style.transform = `scale(${scale})`;
-  },
-
-  /* ------------------------------------------------------------- the step */
-
   act(ctx) {
     if (!this.alive) return;
+    if (this.phase === 'ready') {
+      this.newDanse(ctx);
+      return;
+    }
     if (this.phase === 'hold') {
       // A press already in flight when the measure resolved is not a mistake.
       if (performance.now() - this.holdStartedAt < HOLD_GRACE_MS) return;
@@ -313,46 +362,43 @@ const game = {
   },
 
   step() {
-    const now = performance.now();
-    const elapsed = now - this.beatOrigin;
-    if (elapsed < 0) return; // the count-in is free
-
-    const beatIndex = Math.floor(elapsed / this.beatInterval);
-    if (beatIndex >= this.danseBeats) return; // resolving; the hold guard decides
-
-    // One step per beat — but the beat is the boundary the window straddles, not
-    // the cell it falls in. Keying this on beatIndex let a step taken in the
-    // first quarter of a cell swallow the next beat's step without a word.
-    const beat = Math.round(elapsed / this.beatInterval);
-    if (beat === this.lastPressBeat) return;
+    const beat = this.activeStepIndex;
+    if (beat < 0) {
+      this.ctx.message('Wait for the playhead to enter the current measure; NEXT is only a preview.');
+      return;
+    }
+    if (beat >= this.danseBeats) return;
+    if (beat === this.lastPressBeat) {
+      this.ctx.message('This beat was already counted. Wait for the next beat.');
+      return;
+    }
     this.lastPressBeat = beat;
 
-    if (this.withinWindow(elapsed - beatIndex * this.beatInterval)) {
+    const activeCue = this.phraseSlots[beat % 4];
+    if (activeCue.classList.contains('danse__cue--step')) {
       this.steps += 1;
-      this.ctx.message(`${this.steps} ${plural(this.steps, 'step')} in time.`);
+      this.beatResults[beat] = true;
+      clearTimeout(this.hitFlashTimer);
+      this.wrap.classList.add('danse--hit');
+      this.hitFlashTimer = setTimeout(() => this.wrap.classList.remove('danse--hit'), 220);
     } else {
-      this.ctx.message('Out of step \u2014 that beat is lost.');
+      this.beatResults[beat] = false;
+      this.multiplier = 1;
+      this.ctx.message(this.dansePattern[beat] ? 'Out of step \u2014 that beat is lost.' : 'A step on the rest \u2014 the host notices.');
     }
     this.paint();
   },
 
-  withinWindow(positionWithinBeat) {
-    const tolerance = Math.max(MIN_TOLERANCE_MS, this.beatInterval * TOLERANCE_RATIO);
-    const distance = Math.min(positionWithinBeat, this.beatInterval - positionWithinBeat);
-    return distance <= tolerance;
-  },
-
-  /* -------------------------------------------------------------- outcomes */
-
   beginHold(now) {
     this.phase = 'hold';
+    clearTimeout(this.hitFlashTimer);
+    this.wrap.classList.remove('danse--hit');
     this.holdStartedAt = now;
     this.holdEndsAt = now + this.holdMs;
     this.wrap.classList.remove('danse--tell');
     this.wrap.classList.add('danse--hold');
     this.dancers.classList.remove('danse__dancers--step');
     this.stateLabel.textContent = 'The music stops \u2014 hold still';
-    this.wrap.classList.remove('danse--beat');
     this.hint.textContent = 'Do not move. Any step now is noticed by the host.';
     this.ctx.message('The music stops. Hold still \u2014 anything moving is noticed.');
     this.paint();
@@ -366,26 +412,26 @@ const game = {
     const award = this.steps * multiplierUsed;
     if (award > 0) this.ctx.addPoints(award);
 
-    const required = Math.ceil(this.danseBeats * BEATS_REQUIRED_RATIO);
-    const raised = this.steps >= required && multiplierUsed < MULTIPLIER_CAP;
+    const clean = this.dansePattern.reduce((total, step, beat) => total + (step ? this.beatResults[beat] === true : this.beatResults[beat] !== false), 0);
+    const flawless = this.dansePattern.every((step, beat) => (
+      step ? this.beatResults[beat] === true : this.beatResults[beat] !== false
+    ));
+    const raised = flawless && multiplierUsed < MULTIPLIER_CAP;
     if (raised) this.multiplier += 1;
     this.survived += 1;
 
-    // The resolve's leading flash counts as a beat, so the raw count can run one
-    // past the danse's length. Clamped for the readout only — the grace is banked
-    // either way.
     const hit = Math.min(this.steps, this.danseBeats);
     const move = raised
       ? `\u00d7${multiplierUsed} \u2192 \u00d7${this.multiplier}`
       : `multiplier holds at \u00d7${this.multiplier}`;
 
-    this.wrap.classList.remove('danse--hold', 'danse--tell', 'danse--beat');
+    this.wrap.classList.remove('danse--hold', 'danse--tell');
     this.wrap.classList.add('danse--survived');
     this.stateLabel.textContent = 'The hall breathes again';
-    this.hint.textContent = `Held ${hit} of ${this.danseBeats} beats \u00b7 ${move}`;
+    this.hint.textContent = `${hit} steps \u00b7 ${clean}/${this.danseBeats} beats clean \u00b7 ${move}`;
     this.ctx.setActionEnabled(false);
     this.ctx.message(
-      `Held still \u00b7 ${hit} of ${this.danseBeats} beats at \u00d7${multiplierUsed} = ${award} grace. `
+      `Held still \u00b7 ${clean} of ${this.danseBeats} beats clean; ${award} grace. `
       + (raised ? `Multiplier \u00d7${this.multiplier}.` : 'The multiplier holds.'),
     );
 
@@ -398,11 +444,9 @@ const game = {
     this.stopClock();
     const lost = this.steps;
     const from = this.multiplier;
-    // One level: a catch should sting without deciding the night, and the
-    // multiplier is what the dancing is for.
-    this.multiplier = Math.max(1, this.multiplier - 1);
+    this.multiplier = 1;
 
-    this.wrap.classList.remove('danse--hold', 'danse--tell', 'danse--beat');
+    this.wrap.classList.remove('danse--hold', 'danse--tell');
     this.wrap.classList.add('danse--caught');
     this.stateLabel.textContent = 'The host has seen you';
     this.hint.textContent = from > 1
@@ -410,8 +454,8 @@ const game = {
       : `You moved during the hold. Danse ${this.danseNumber + 1} begins shortly.`;
     this.ctx.setActionEnabled(false);
     this.ctx.message(from > 1
-      ? `You moved. ${lost} ${plural(lost, 'step')} lost, and the host takes one multiplier level: \u00d7${from} \u2192 \u00d7${this.multiplier}.`
-      : `You moved. ${lost} ${plural(lost, 'step')} lost. The multiplier is already at \u00d71.`);
+      ? `You moved. ${lost} ${plural(lost, 'step')} lost, and the multiplier resets: \u00d7${from} \u2192 \u00d71.`
+      : `You moved. ${lost} ${plural(lost, 'step')} lost. Multiplier stays at \u00d71.`);
 
     this.paint();
     this.settle();
@@ -424,8 +468,6 @@ const game = {
     }, SETTLE_MS);
   },
 
-  /* ---------------------------------------------------------------- paints */
-
   paint() {
     if (!this.wrap) return;
     const steps = this.steps ?? 0;
@@ -436,13 +478,7 @@ const game = {
     this.danseValue.textContent = String(this.danseNumber ?? 1);
     this.wrap.classList.toggle('danse--dance', this.phase === 'dance');
     this.wrap.classList.toggle('danse--hold', this.phase === 'hold');
-    if (this.chandelier) {
-      this.chandelier.classList.toggle('danse__chandelier--lit', this.phase === 'dance');
-      if (this.phase !== 'dance') this.chandelier.style.opacity = '';
-    }
   },
-
-  /* ------------------------------------------------------------- tab hidden */
 
   handleVisibility() {
     if (!this.alive) return;
@@ -457,7 +493,6 @@ const game = {
     if (this.hiddenAt === null) return;
     const gap = performance.now() - this.hiddenAt;
     this.hiddenAt = null;
-    // Shift the clock forward by the time away, so a hidden tab costs nothing.
     if (this.beatOrigin != null) this.beatOrigin += gap;
     if (this.holdEndsAt != null) this.holdEndsAt += gap;
     if (this.phase === 'dance' || this.phase === 'hold') this.startClock();
