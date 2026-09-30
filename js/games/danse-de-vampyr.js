@@ -38,7 +38,7 @@ const game = {
     const readout = el('div', 'danse__readout');
 
     const grace = el('div', 'danse__stat');
-    grace.append(el('span', 'danse__label', 'Graceca'));
+    grace.append(el('span', 'danse__label', 'Grace'));
     this.graceValue = el('strong', 'danse__value', '0');
     grace.append(this.graceValue);
 
@@ -279,6 +279,14 @@ const game = {
     }
   },
 
+  positionPlayhead(progress) {
+    const track = this.currentMeasureCues.getBoundingClientRect();
+    const beat = Math.min(Math.floor(progress), this.phraseSlots.length - 1);
+    const cue = this.phraseSlots[beat].getBoundingClientRect();
+    const position = cue.left - track.left + cue.width * (progress - beat);
+    this.currentMeasureCues.style.setProperty('--phrase-progress', `${position}px`);
+  },
+
   startClock() {
     this.stopClock();
     this.clock = setInterval(() => this.tick(), TICK_MS);
@@ -298,7 +306,7 @@ const game = {
     if (this.phase === 'dance') {
       const elapsed = now - this.beatOrigin;
       if (elapsed < 0) {
-        this.currentMeasureCues.style.setProperty('--phrase-progress', '0%');
+        this.positionPlayhead(0);
         this.showPhrase(0, false);
         return;
       }
@@ -321,9 +329,8 @@ const game = {
       const cueBeat = beatIndex;
       this.showPhrase(cueBeat);
       this.wrap.classList.toggle('danse--watch', this.dansePattern[cueBeat] === 0);
-      this.currentMeasureCues.style.setProperty(
-        '--phrase-progress',
-        `${((beatIndex % 4 + (elapsed / this.beatInterval - beatIndex)) / 4) * 100}%`,
+      this.positionPlayhead(
+        beatIndex % this.phraseSlots.length + elapsed / this.beatInterval - beatIndex,
       );
 
       const pose = beatIndex % 2 === 1;
