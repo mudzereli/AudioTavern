@@ -1,6 +1,6 @@
 import { el, plural } from '../dom.js';
 
-const TICK_MS = 20;
+const TICK_MS = 16;
 
 const START_BEAT_MS = 780;
 const ACT_TEMPO_STEP_MS = 30;
@@ -66,26 +66,13 @@ const game = {
     for (let index = 0; index < 3; index += 1) arches.append(el('span', 'danse__arch'));
 
     this.phrase = el('div', 'danse__phrases');
-    const currentMeasure = el('div', 'danse__measure');
-    currentMeasure.append(el('span', 'danse__measure-label', 'NOW'));
+    this.phrase.setAttribute('role', 'group');
+    this.phrase.setAttribute('aria-label', 'Dance steps timeline');
     this.currentMeasureCues = el('div', 'danse__measure-cues');
-    this.phraseSlots = Array.from({ length: 4 }, (_, index) => {
-      const slot = el('span', 'danse__cue', 'STEP');
-      slot.dataset.beat = String(index + 1);
-      return slot;
-    });
+    this.phraseSlots = [];
     this.playhead = el('span', 'danse__playhead');
     this.playhead.setAttribute('aria-hidden', 'true');
-    this.currentMeasureCues.append(...this.phraseSlots, this.playhead);
-    currentMeasure.append(this.currentMeasureCues);
-
-    const nextMeasure = el('div', 'danse__measure danse__measure--next');
-    this.nextMeasureLabel = el('span', 'danse__measure-label', 'NEXT');
-    const nextMeasureCues = el('div', 'danse__measure-cues');
-    this.nextPhraseSlots = Array.from({ length: 4 }, () => el('span', 'danse__cue danse__cue--preview', 'STEP'));
-    nextMeasureCues.append(...this.nextPhraseSlots);
-    nextMeasure.append(this.nextMeasureLabel, nextMeasureCues);
-    this.phrase.append(nextMeasure, currentMeasure);
+    this.phrase.append(this.currentMeasureCues, this.playhead);
 
     const floor = el('div', 'danse__floor');
     floor.setAttribute('aria-hidden', 'true');
@@ -110,7 +97,7 @@ const game = {
     this.hint = el(
       'p',
       'danse__hint',
-      'Only NOW is playable; NEXT is a preview. Step on active STEP beats, stay still for WATCH, then hold when the music stops.',
+      'Step on STEP beats, stay still for WATCH, then hold when the music stops.',
     );
 
     wrap.append(readout, hall, ctx.actionBar, this.hint);
@@ -147,18 +134,24 @@ const game = {
     this.phase = 'stopped';
     this.stopClock();
     clearTimeout(this.settleTimer);
-    clearTimeout(this.hitFlashTimer);
+    this.clearHitFlash();
     if (this.wrap) {
-      this.wrap.classList.remove('danse--dance', 'danse--hold', 'danse--tell', 'danse--hit');
+      this.wrap.classList.remove('danse--dance', 'danse--hold', 'danse--tell');
       this.wrap.classList.add('danse--stopped');
     }
     if (this.ctx) this.ctx.setActionEnabled(false);
   },
 
+  clearHitFlash() {
+    clearTimeout(this.hitFlashTimer);
+    this.hitFlashTimer = null;
+    if (this.hitCue) this.hitCue.classList.remove('danse__cue--hit');
+    this.hitCue = null;
+  },
+
   newDanse(ctx) {
     clearTimeout(this.settleTimer);
-    clearTimeout(this.hitFlashTimer);
-    this.wrap.classList.remove('danse--hit');
+    this.clearHitFlash();
     this.danseNumber += 1;
     this.steps = 0;
     this.lastPressBeat = -1;
@@ -187,9 +180,19 @@ const game = {
       this.bars.push(pattern);
       this.dansePattern.push(...PATTERNS[pattern]);
     }
+    this.phraseSlots = this.dansePattern.map((step, index) => {
+      const cue = el('span', `danse__cue ${step ? 'danse__cue--step' : 'danse__cue--watch'}`, step ? 'STEP' : 'WATCH');
+      cue.dataset.beat = String(index + 1);
+      cue.setAttribute('aria-label', step ? 'Step on the beat' : 'The host is watching; stay still');
+      return cue;
+    });
+    this.graceCue = el('span', 'danse__cue danse__cue--grace');
+    this.graceCue.setAttribute('aria-hidden', 'true');
+    this.holdCue = el('span', 'danse__cue danse__cue--hold', 'HOLD');
+    this.holdCue.setAttribute('aria-label', 'Hold still when the music stops');
+    this.currentMeasureCues.replaceChildren(this.graceCue, ...this.phraseSlots, this.holdCue);
+    this.phrasePadding = null;
     this.beatResults = Array(this.danseBeats);
-    this.activeBar = -1;
-    this.previewBar = -1;
     this.activeBeat = -1;
     this.activeStepIndex = -1;
     this.holdMs = Math.max(MIN_HOLD_MS, HOLD_START_MS - this.survived * HOLD_STEP_MS);
@@ -203,7 +206,7 @@ const game = {
     this.wrap.classList.remove('danse--survived', 'danse--caught', 'danse--hold', 'danse--tell');
     this.dancers.classList.remove('danse__dancers--step');
     this.stateLabel.textContent = ACTS[this.actIndex];
-    this.hint.textContent = 'Only NOW is playable; NEXT is a preview. Step on active STEP beats and stay still for WATCH.';
+    this.hint.textContent = 'Step on STEP beats, stay still for WATCH, then hold when the music stops.';
     // The button never asks to be pressed, so it keeps one label all night.
     ctx.setActionLabel('Step');
     ctx.setActionEnabled(true);
@@ -215,7 +218,8 @@ const game = {
       : quickened
         ? `Danse ${this.danseNumber}. The orchestra quickens with your multiplier.`
         : `Danse ${this.danseNumber}. A slower measure \u2014 the multiplier is \u00d7${this.multiplier}.`}`);
-    this.showPhrase(0, false);
+    this.showPhrase(-1);
+    this.positionPhrase(-1);
     this.paint();
     this.startClock();
   },
@@ -236,55 +240,39 @@ const game = {
     return this.lastPattern;
   },
 
-  showPhrase(beatIndex, active = true) {
-    const bar = Math.floor(beatIndex / 4);
-    if (bar !== this.activeBar) {
-      this.phraseSlots.forEach((slot, index) => {
-        const step = PATTERNS[this.bars[bar]][index] === 1;
-        slot.textContent = step ? 'STEP' : 'WATCH';
-        slot.setAttribute('aria-label', step ? 'Step on the beat' : 'The host is watching; stay still');
-        slot.classList.toggle('danse__cue--step', step);
-        slot.classList.toggle('danse__cue--watch', !step);
-      });
-      this.activeBar = bar;
-    }
-    const nextBar = bar + 1;
-    if (nextBar !== this.previewBar) {
-      const patternIndex = this.bars[nextBar];
-      const resolvesToHold = patternIndex == null;
-      this.nextMeasureLabel.textContent = resolvesToHold ? 'THEN' : 'NEXT';
-      this.nextPhraseSlots.forEach((slot, index) => {
-        const step = !resolvesToHold && PATTERNS[patternIndex][index] === 1;
-        slot.textContent = resolvesToHold ? 'HOLD' : step ? 'STEP' : 'WATCH';
-        slot.setAttribute('aria-label', resolvesToHold
-          ? 'Hold still when the music stops'
-          : step ? 'Upcoming step on the beat' : 'Upcoming beat: stay still');
-        slot.classList.toggle('danse__cue--step', step);
-        slot.classList.toggle('danse__cue--watch', !step && !resolvesToHold);
-        slot.classList.toggle('danse__cue--hold', resolvesToHold);
-      });
-      this.previewBar = nextBar;
-    }
-    if (!active) {
+  showPhrase(beatIndex) {
+    if (beatIndex < 0) {
       this.phraseSlots.forEach((slot) => slot.classList.remove('danse__cue--active'));
       this.activeBeat = -1;
       this.activeStepIndex = -1;
       return;
     }
     this.activeStepIndex = beatIndex;
-    const activeSlot = beatIndex % 4;
-    if (activeSlot !== this.activeBeat) {
-      this.phraseSlots.forEach((slot, index) => slot.classList.toggle('danse__cue--active', index === activeSlot));
-      this.activeBeat = activeSlot;
+    if (beatIndex !== this.activeBeat) {
+      this.phraseSlots.forEach((slot, index) => slot.classList.toggle('danse__cue--active', index === beatIndex));
+      this.activeBeat = beatIndex;
     }
   },
 
-  positionPlayhead(progress) {
-    const track = this.currentMeasureCues.getBoundingClientRect();
-    const beat = Math.min(Math.floor(progress), this.phraseSlots.length - 1);
-    const cue = this.phraseSlots[beat].getBoundingClientRect();
-    const position = cue.left - track.left + cue.width * (progress - beat);
-    this.currentMeasureCues.style.setProperty('--phrase-progress', `${position}px`);
+  cueAtPlayhead(playheadRect = this.playhead.getBoundingClientRect()) {
+    return this.phraseSlots.findIndex((cue) => {
+      const rect = cue.getBoundingClientRect();
+      return rect.left <= playheadRect.right && rect.right >= playheadRect.left;
+    });
+  },
+
+  positionPhrase(progress) {
+    const viewportWidth = this.phrase.clientWidth;
+    const firstCueWidth = this.graceCue.offsetWidth;
+    const sidePadding = Math.max(0, (viewportWidth - firstCueWidth) / 2);
+    if (sidePadding !== this.phrasePadding) {
+      this.currentMeasureCues.style.paddingInline = `${sidePadding}px`;
+      this.phrasePadding = sidePadding;
+    }
+    const firstRight = this.graceCue.offsetLeft + this.graceCue.offsetWidth;
+    const stride = this.phraseSlots[0].offsetLeft - this.graceCue.offsetLeft;
+    const offset = viewportWidth / 2 - firstRight - stride * progress;
+    this.currentMeasureCues.style.transform = `translate3d(${offset}px, 0, 0)`;
   },
 
   startClock() {
@@ -306,14 +294,24 @@ const game = {
     if (this.phase === 'dance') {
       const elapsed = now - this.beatOrigin;
       if (elapsed < 0) {
-        this.positionPlayhead(0);
-        this.showPhrase(0, false);
+        this.showPhrase(-1);
+        this.positionPhrase(elapsed / this.beatInterval);
         return;
       }
-      const beatIndex = Math.floor(elapsed / this.beatInterval);
+      const timelineProgress = elapsed / this.beatInterval;
+      this.positionPhrase(timelineProgress);
+      if (timelineProgress < 1) {
+        this.showPhrase(-1);
+        this.wrap.classList.remove('danse--watch');
+        return;
+      }
+      const beatProgress = timelineProgress - 1;
+      const beatIndex = Math.floor(beatProgress);
+      const playheadRect = this.playhead.getBoundingClientRect();
       let missedStep = false;
-      for (let beat = this.activeStepIndex; beat < Math.min(beatIndex, this.danseBeats); beat += 1) {
-        if (this.dansePattern[beat] && this.beatResults[beat] !== true) {
+      for (let beat = 0; beat < this.danseBeats; beat += 1) {
+        const cueRight = this.phraseSlots[beat].getBoundingClientRect().right;
+        if (this.dansePattern[beat] && this.beatResults[beat] === undefined && cueRight < playheadRect.left) {
           this.beatResults[beat] = false;
           missedStep = true;
         }
@@ -326,12 +324,9 @@ const game = {
         this.beginHold(now);
         return;
       }
-      const cueBeat = beatIndex;
+      const cueBeat = this.cueAtPlayhead(playheadRect);
       this.showPhrase(cueBeat);
-      this.wrap.classList.toggle('danse--watch', this.dansePattern[cueBeat] === 0);
-      this.positionPlayhead(
-        beatIndex % this.phraseSlots.length + elapsed / this.beatInterval - beatIndex,
-      );
+      this.wrap.classList.toggle('danse--watch', cueBeat >= 0 && this.dansePattern[cueBeat] === 0);
 
       const pose = beatIndex % 2 === 1;
       if (pose !== this.stepPose) {
@@ -369,9 +364,13 @@ const game = {
   },
 
   step() {
-    const beat = this.activeStepIndex;
+    if (performance.now() < this.beatOrigin) {
+      this.ctx.message('Wait for the first beat before stepping.');
+      return;
+    }
+    const beat = this.cueAtPlayhead();
     if (beat < 0) {
-      this.ctx.message('Wait for the playhead to enter the current measure; NEXT is only a preview.');
+      this.ctx.message('Wait until a cue reaches the playhead.');
       return;
     }
     if (beat >= this.danseBeats) return;
@@ -380,14 +379,16 @@ const game = {
       return;
     }
     this.lastPressBeat = beat;
+    this.showPhrase(beat);
 
-    const activeCue = this.phraseSlots[beat % 4];
+    const activeCue = this.phraseSlots[beat];
     if (activeCue.classList.contains('danse__cue--step')) {
       this.steps += 1;
       this.beatResults[beat] = true;
-      clearTimeout(this.hitFlashTimer);
-      this.wrap.classList.add('danse--hit');
-      this.hitFlashTimer = setTimeout(() => this.wrap.classList.remove('danse--hit'), 220);
+      this.clearHitFlash();
+      this.hitCue = activeCue;
+      activeCue.classList.add('danse__cue--hit');
+      this.hitFlashTimer = setTimeout(() => this.clearHitFlash(), 220);
     } else {
       this.beatResults[beat] = false;
       this.multiplier = 1;
@@ -398,10 +399,10 @@ const game = {
 
   beginHold(now) {
     this.phase = 'hold';
-    clearTimeout(this.hitFlashTimer);
-    this.wrap.classList.remove('danse--hit');
+    this.clearHitFlash();
     this.holdStartedAt = now;
     this.holdEndsAt = now + this.holdMs;
+    this.positionPhrase(this.danseBeats + 1);
     this.wrap.classList.remove('danse--tell');
     this.wrap.classList.add('danse--hold');
     this.dancers.classList.remove('danse__dancers--step');

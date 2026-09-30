@@ -67,36 +67,25 @@
   bottom: 1rem;
   z-index: 2;
   width: min(26rem, calc(100% - 1.2rem));
-  display: grid;
-  gap: 0.5rem;
+  height: 3.2rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
   transform: translateX(-50%);
 }
 
 .danse__phrases[hidden] { display: none; }
 
-.danse__measure {
-  display: grid;
-  grid-template-columns: 2.6rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.danse__measure-label {
-  color: var(--ink-3);
-  font-size: 0.58rem;
-  font-weight: 700;
-  text-align: right;
-}
-
 .danse__measure-cues {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  width: max-content;
   gap: 0.45rem;
+  will-change: transform;
 }
 
 .danse__cue {
-  min-width: 0;
+  flex: 0 0 clamp(3.7rem, 16vw, 4.4rem);
   min-height: 2.6rem;
   display: grid;
   place-items: center;
@@ -110,6 +99,7 @@
 }
 
 .danse__cue--watch { border-style: dashed; color: #e6aaaa; }
+.danse__cue--grace { visibility: hidden; }
 
 .danse__cue--active {
   border-color: #e9c07a;
@@ -118,28 +108,26 @@
   transform: translateY(-0.16rem);
 }
 
-.danse__cue--preview { opacity: 0.62; }
 .danse__cue--hold { border-color: #9c7278; color: #e6aaaa; }
 
 .danse__playhead {
   position: absolute;
   top: -0.2rem;
   bottom: -0.2rem;
-  left: var(--phrase-progress, 0%);
+  left: 50%;
+  z-index: 1;
   width: 2px;
   transform: translateX(-50%);
   background: #fff0ca;
   box-shadow: 0 0 10px rgb(255 224 168 / 0.85);
   pointer-events: none;
-  transition: left 20ms linear;
 }
 
-.danse--hit .danse__cue--active {
+.danse__cue--hit {
   border-color: #fff4d1;
   background: #ffe09a;
   color: #27170a;
   box-shadow: 0 0 30px rgb(255 224 154 / 0.95);
-  transform: translateY(-0.16rem) scale(1.05);
 }
 
 /* Mirrored arches across the back wall. */
@@ -327,7 +315,7 @@
   .danse__label { font-size: 0.52rem; }
   .danse__value { font-size: 1.4rem; }
   .danse__hall { min-height: 18.5rem; padding: 1rem 0.9rem; }
-  .danse__phrases { bottom: 0.8rem; }
+  .danse__phrases { bottom: 0.8rem; height: 2.8rem; }
   .danse__floor { bottom: 0.8rem; height: 5.5rem; }
   .danse__arches { bottom: 6.3rem; }
   .danse__cue { min-height: 2.2rem; font-size: 0.64rem; }
@@ -343,6 +331,7 @@
   .danse__host,
   .danse__host-eye,
   .danse__cue,
+  .danse__measure-cues,
   .danse__playhead {
     transition: none;
   }
