@@ -86,7 +86,7 @@ export const GAMES = [
     accent: '#e0a24a',
     scoreLabel: 'tiles shut',
     rules:
-      'Roll two dice, then shut tiles that add up to the roll. Leave yourself no move and the round is over.',
+      'Start with tiles 1-8. One new tile opens every two minutes, up to 12. Roll two dice, then shut tiles that add up to the roll. Leave yourself no move and the round is over.',
     actionLabel: 'Roll',
     track: {
       title: 'Tavern Music',

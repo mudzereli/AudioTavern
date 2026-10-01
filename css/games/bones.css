@@ -38,7 +38,7 @@
 .tiles {
   width: min(360px, 100%);
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--tile-columns, 4), minmax(0, 1fr));
   gap: 0.6rem;
 }
 

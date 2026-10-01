@@ -11,7 +11,10 @@
 
 import { renderDice, roll, subsetsSummingTo, sum } from '../dice.js';
 
-const TILES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const TILES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const START_TILE_COUNT = 8;
+const BOX_INTERVAL_MS = 2 * 60 * 1000;
+const BOX_CHECK_MS = 250;
 
 /** Pause between rounds, long enough to read what happened. */
 const BEAT_MS = 1100;
@@ -27,6 +30,7 @@ const game = {
 
     const grid = document.createElement('div');
     grid.className = 'tiles';
+    this.grid = grid;
 
     this.tiles = new Map();
     for (const value of TILES) {
@@ -35,6 +39,7 @@ const game = {
       tile.className = 'tile';
       tile.textContent = String(value);
       tile.disabled = true;
+      tile.hidden = true;
       tile.setAttribute('aria-pressed', 'false');
       tile.setAttribute('aria-label', `Tile ${value}`);
       tile.addEventListener('click', () => this.toggleTile(value));
@@ -78,20 +83,36 @@ const game = {
     this.alive = true;
     this.bestRoundShut = 0;
     this.roundsPlayed = 0;
+    this.boxCount = 0;
+    this.open = null;
+    clearInterval(this.boxUnlockTimer);
+    for (const tile of this.tiles.values()) tile.hidden = true;
     this.recordEl.textContent = '0';
     this.roundsEl.textContent = '0';
+    this.syncBoxes(ctx);
     this.newRound(ctx);
+    if (this.boxCount < TILES.length) {
+      this.boxUnlockTimer = setInterval(() => {
+        if (!this.alive) return;
+        this.syncBoxes(ctx);
+        if (this.boxCount === TILES.length) {
+          clearInterval(this.boxUnlockTimer);
+          this.boxUnlockTimer = null;
+        }
+      }, BOX_CHECK_MS);
+    }
   },
 
   stop() {
     this.alive = false;
     clearTimeout(this.beat);
+    clearInterval(this.boxUnlockTimer);
   },
 
   /* ------------------------------------------------------------- one round */
 
   newRound(ctx) {
-    this.open = new Set(TILES);
+    this.open = new Set(TILES.slice(0, this.boxCount));
     this.picked = new Set();
     this.shut = 0;
     this.total = 0;
@@ -104,6 +125,23 @@ const game = {
     ctx.message('Roll the bones.');
     ctx.setActionLabel('Roll');
     ctx.setActionEnabled(true);
+  },
+
+  syncBoxes(ctx) {
+    const elapsed = ctx.run.durationMs - ctx.run.remainingMs;
+    const boxCount = Math.min(
+      TILES.length,
+      START_TILE_COUNT + Math.floor(elapsed / BOX_INTERVAL_MS),
+    );
+    if (boxCount <= this.boxCount) return;
+
+    for (let value = this.boxCount + 1; value <= boxCount; value += 1) {
+      this.tiles.get(value).hidden = false;
+      this.open?.add(value);
+    }
+    this.boxCount = boxCount;
+    this.grid.style.setProperty('--tile-columns', String(Math.ceil(boxCount / 2)));
+    if (this.open) this.paint();
   },
 
   paint() {
