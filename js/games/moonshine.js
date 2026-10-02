@@ -6,8 +6,8 @@
    never scored — so the night is a race between making bottles and affording
    the kit that makes more of them.
 
-  Six chains, one lever each, each bought in order. The Still is always open;
-  two of the other five are out each night, changing which strategy is available.
+  Eight chains, one lever each, each bought in order. The Still, Batch Size and
+  Order Size are always open; two of the other five are out each night.
 
   The shell's button sells one bottle by hand at the Runners rate.
    In the opening the hand is the only real channel; from the middle of the night
@@ -18,12 +18,6 @@
 import { el, plural, svgEl, svgPath } from '../dom.js';
 import { shuffle } from '../rng.js';
 
-/** How often the still and the buyers are settled. */
-const TICK_MS = 200;
-
-/** How long stock must wait before Aging Casks pay their premium. */
-const CASK_AGE_SECONDS = 30;
-
 /* The still: a copper pot, a neck curling down to a spout, a drip, and a fire. */
 const ART = [
   'M14 26 h22 v16 a8 8 0 0 1 -8 8 h-6 a8 8 0 0 1 -8 -8 z',
@@ -31,35 +25,104 @@ const ART = [
   'M14 58 l5 -8 5 8',
 ];
 
-/* The six chains — one per lever. `base` is what the chain is worth at level 0; a step's
-   `value` is what the chain is worth once that step is bought, never an increment. */
+/* Starting values and global rules to tune for a new night. */
+const TUNING = {
+  tickMs: 200,
+  caskBonusFillPercent: 75,
+  unavailableChainsPerNight: 2,
+  initialCycleSeconds: 5,
+  initialBatchSize: 1,
+  initialCustomerOrderSeconds: 10,
+  initialCustomerOrderSize: 0,
+  initialHandSaleSeconds: 2,
+  initialBottleValue: 1,
+  initialShedCapacity: 10,
+  initialAgingMultiplier: 1,
+  cycleStepDecrements: [1, 2, 3, 4],
+  batchSizeStepPercentages: [200, 300, 400, 500],
+  customerOrderSizeIncrements: [1, 2, 3, 4],
+  customerIntervalStepPercentages: [80, 60, 50, 40],
+  bottleValueStepPercentages: [200, 400, 800, 1500, 2500],
+  shedCapacityStepPercentages: [200, 500, 1500, 4000],
+  handSaleStepPercentages: [83, 67, 50, 33],
+  agingMultiplierStepPercentages: [200, 300, 400, 500, 600],
+};
+
+function scaledSteps(base, steps, percentages, direction) {
+  const values = [];
+  let previous = base;
+  for (const percentage of percentages) {
+    const value = Math.round(base * percentage / 100);
+    const improves = direction === 'up' ? value > previous : value > 0 && value < previous;
+    if (!improves) continue;
+    values.push(value);
+    previous = value;
+  }
+  return steps.slice(0, values.length).map((step, index) => ({ ...step, value: values[index] }));
+}
+
+function decrementedSteps(base, steps, decrements, minimum = 1) {
+  const values = decrements.map((decrement) => base - decrement)
+    .filter((value) => value >= minimum && value < base);
+  return steps.slice(0, values.length).map((step, index) => ({ ...step, value: values[index] }));
+}
+
+function addedSteps(base, steps, increments) {
+  return steps.slice(0, increments.length).map((step, index) => ({
+    ...step,
+    value: base + increments[index],
+  }));
+}
+
+/* Upgrade costs and values. A step's value is the new value after purchase. */
 const CHAINS = [
   {
     id: 'still',
     label: 'The Still',
-    base: 0.2,
-    steps: [
-      { name: 'Better Fire', cost: 10, value: 0.25 },
-      { name: 'Copper Coil', cost: 25, value: 1 / 3 },
-      { name: 'Large Still', cost: 60, value: 0.5 },
-      { name: 'Double Still', cost: 150, value: 1 },
-      { name: 'Industrial Still', cost: 400, value: 2 },
-    ],
+    // Seconds per production cycle; Batch Size sets bottles made by each cycle.
+    base: TUNING.initialCycleSeconds,
+    steps: decrementedSteps(TUNING.initialCycleSeconds, [
+      { name: 'Better Fire', cost: 10 },
+      { name: 'Copper Coil', cost: 25 },
+      { name: 'Large Still', cost: 60 },
+      { name: 'Double Still', cost: 150 },
+      { name: 'Industrial Still', cost: 400 },
+    ], TUNING.cycleStepDecrements),
+  },
+  {
+    id: 'batch-size',
+    label: 'Batch Size',
+    base: TUNING.initialBatchSize,
+    steps: scaledSteps(TUNING.initialBatchSize, [
+      { name: 'Double Batch', cost: 20 },
+      { name: 'Three-Bottle Batch', cost: 75 },
+      { name: 'Four-Bottle Batch', cost: 200 },
+      { name: 'Five-Bottle Batch', cost: 500 },
+    ], TUNING.batchSizeStepPercentages, 'up'),
+  },
+  {
+    id: 'order-size',
+    label: 'Order Size',
+    base: TUNING.initialCustomerOrderSize,
+    steps: addedSteps(TUNING.initialCustomerOrderSize, [
+      { name: 'First Customer Order', cost: 25 },
+      { name: 'Two-Bottle Order', cost: 100 },
+      { name: 'Three-Bottle Order', cost: 200 },
+      { name: 'Four-Bottle Order', cost: 350 },
+    ], TUNING.customerOrderSizeIncrements),
   },
   {
     id: 'buyers',
     label: 'Customers',
-    // A neighbour takes the odd bottle from the first second, so the till runs without the
-    // player. The ladder tops at 1.4 b/s on purpose: with the hand at 0.4 b/s the shelf is
-    // still filling in the last minute, which is the only thing keeping the shed chain worth
-    // buying. Never let this top out above the still's 2 b/s.
-    base: 0.1,
-    steps: [
-      { name: 'Regular Customers', cost: 20, value: 0.25 },
-      { name: 'Bar Connection', cost: 50, value: 0.6 },
-      { name: 'Delivery Wagon', cost: 120, value: 1 },
-      { name: 'Delivery Truck', cost: 350, value: 1.4 },
-    ],
+    // Customers top out at four bottles every 4s; hand sales reach one bottle
+    // every 1s, for a combined peak of 2 bottles/s below the Still's 5.
+    base: TUNING.initialCustomerOrderSeconds,
+    steps: scaledSteps(TUNING.initialCustomerOrderSeconds, [
+      { name: 'Regular Customers', cost: 20 },
+      { name: 'Bar Connection', cost: 50 },
+      { name: 'Delivery Wagon', cost: 120 },
+      { name: 'Delivery Truck', cost: 350 },
+    ], TUNING.customerIntervalStepPercentages, 'down'),
   },
   {
     id: 'mash',
@@ -67,58 +130,55 @@ const CHAINS = [
     // Doubled with the base price, because the money curve is the pace of the whole night:
     // at $2 a bottle and up, the shop is affordable inside ten minutes. Halving these halve
     // the pace.
-    base: 2,
-    steps: [
-      { name: 'Better Mash', cost: 30, value: 4 },
-      { name: 'Quality Ingredients', cost: 100, value: 8 },
-      { name: 'Secret Recipe', cost: 300, value: 16 },
-      { name: 'Premium Moonshine', cost: 750, value: 30 },
-      { name: 'Black Label', cost: 1500, value: 50 },
-    ],
+    base: TUNING.initialBottleValue,
+    steps: scaledSteps(TUNING.initialBottleValue, [
+      { name: 'Better Mash', cost: 30 },
+      { name: 'Quality Ingredients', cost: 100 },
+      { name: 'Secret Recipe', cost: 300 },
+      { name: 'Premium Moonshine', cost: 750 },
+      { name: 'Black Label', cost: 1500 },
+    ], TUNING.bottleValueStepPercentages, 'up'),
   },
   {
     id: 'shed',
     label: 'The Shed',
-    base: 5,
-    steps: [
-      { name: 'Extra Crate', cost: 15, value: 10 },
-      { name: 'Storage Shed', cost: 50, value: 25 },
-      { name: 'Barn', cost: 175, value: 75 },
-      { name: 'Warehouse', cost: 500, value: 200 },
-    ],
+    base: TUNING.initialShedCapacity,
+    steps: scaledSteps(TUNING.initialShedCapacity, [
+      { name: 'Extra Crate', cost: 15 },
+      { name: 'Storage Shed', cost: 50 },
+      { name: 'Barn', cost: 175 },
+      { name: 'Warehouse', cost: 500 },
+    ], TUNING.shedCapacityStepPercentages, 'up'),
   },
   {
     id: 'runners',
     label: 'Runners',
-    base: 0.4,
-    steps: [
-      { name: 'Quick Step', cost: 15, value: 0.45 },
-      { name: 'Night Route', cost: 45, value: 0.5 },
-      { name: 'Handcart', cost: 125, value: 0.55 },
-      { name: 'Fast Crew', cost: 300, value: 0.6 },
-    ],
+    base: TUNING.initialHandSaleSeconds,
+    steps: scaledSteps(TUNING.initialHandSaleSeconds, [
+      { name: 'Quick Step', cost: 15 },
+      { name: 'Night Route', cost: 45 },
+      { name: 'Handcart', cost: 125 },
+      { name: 'Fast Crew', cost: 300 },
+    ], TUNING.handSaleStepPercentages, 'down'),
   },
   {
     id: 'casks',
     label: 'Aging Casks',
-    base: 1,
-    steps: [
-      { name: 'Charred Oak', cost: 20, value: 1.5 },
-      { name: 'Cool Cellar', cost: 60, value: 2 },
-      { name: 'Deep Cellar', cost: 175, value: 2.5 },
-      { name: 'Hidden Stock', cost: 500, value: 3 },
-      { name: 'Master Cooper', cost: 1200, value: 4 },
-    ],
+    base: TUNING.initialAgingMultiplier,
+    steps: scaledSteps(TUNING.initialAgingMultiplier, [
+      { name: 'Charred Oak', cost: 20 },
+      { name: 'Cool Cellar', cost: 60 },
+      { name: 'Deep Cellar', cost: 175 },
+      { name: 'Hidden Stock', cost: 500 },
+      { name: 'Master Cooper', cost: 1200 },
+    ], TUNING.agingMultiplierStepPercentages, 'up'),
   },
 ];
 
+const { tickMs: TICK_MS } = TUNING;
+
 function money(amount) {
   return amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
-}
-
-/** A number trimmed to what it needs: 0.2, 0.33, 1.1, 4. */
-function compact(value) {
-  return String(Number(value.toFixed(2)));
 }
 
 /** What a chain is worth at a level: 0 is the plain base, n is n steps bought. */
@@ -129,12 +189,21 @@ function levelValue(chain, level) {
 /** Everything the still does, derived from the four levels. */
 function statsFrom(levels) {
   const value = (id) => levelValue(CHAINS.find((chain) => chain.id === id), levels[id] || 0);
+  const cycleSeconds = value('still');
+  const batchSize = value('batch-size');
+  const customerSeconds = value('buyers');
+  const handSeconds = value('runners');
+  const orderSize = value('order-size');
   return {
-    rate: value('still'), // bottles a second the kettle turns out
-    sell: value('buyers'), // bottles a second the buyers take off you
+    cycleSeconds,
+    cycleRate: 1 / cycleSeconds,
+    batchSize,
+    customerSeconds,
+    customerRate: 1 / customerSeconds,
     worth: value('mash'), // dollars a bottle
     room: value('shed'), // bottles that can wait
-    hand: value('runners'), // bottles a second the player can sell
+    handSeconds,
+    orderSize,
     agedWorth: Math.round(value('mash') * value('casks')),
   };
 }
@@ -148,10 +217,16 @@ function statsWith(levels, id, level) {
 function effectOf(chain, before, after) {
   if (chain.id === 'mash') return `$${money(before.worth)} → $${money(after.worth)} a bottle`;
   if (chain.id === 'shed') return `${before.room} → ${after.room} bottles`;
-  if (chain.id === 'buyers') return `${compact(before.sell)} → ${compact(after.sell)} a second`;
-  if (chain.id === 'runners') return `${compact(before.hand)} → ${compact(after.hand)} a second`;
-  if (chain.id === 'casks') return `$${money(before.agedWorth)} → $${money(after.agedWorth)} after ${CASK_AGE_SECONDS}s`;
-  return `${compact(before.rate)} → ${compact(after.rate)} a second`;
+  if (chain.id === 'batch-size') return `${before.batchSize} → ${after.batchSize} bottles per batch`;
+  if (chain.id === 'order-size') {
+    return `${before.orderSize} → ${after.orderSize} per customer order · ${before.orderSize + 1} → ${after.orderSize + 1} by hand`;
+  }
+  if (chain.id === 'buyers') return `${before.customerSeconds} → ${after.customerSeconds} seconds per customer order`;
+  if (chain.id === 'runners') return `${before.handSeconds} → ${after.handSeconds} seconds per hand sale`;
+  if (chain.id === 'casks') {
+    return `$${money(before.agedWorth)} → $${money(after.agedWorth)} when the shed is over ${TUNING.caskBonusFillPercent}% full`;
+  }
+  return `${before.cycleSeconds} → ${after.cycleSeconds} seconds per production cycle`;
 }
 
 const game = {
@@ -195,10 +270,10 @@ const game = {
       rates.append(box);
       return value;
     };
-    this.stillValue = cell('Bottles a second');
-    this.buyersValue = cell('Buyers a second');
+    this.stillValue = cell('Seconds per cycle');
+    this.buyersValue = cell('Seconds per customer order');
     this.mashValue = cell('A bottle');
-    this.handValue = cell('Hand a second');
+    this.handValue = cell('Seconds per hand sale');
 
     /* The shop -------------------------------------------------------------- */
 
@@ -247,12 +322,16 @@ const game = {
     this.alive = false;
     clearInterval(this.timer);
     this.timer = null;
+    clearTimeout(this.handCooldownTimer);
+    this.handCooldownTimer = null;
     this.paint();
     this.ctx.message(`The night ends with ${this.ctx.run.score} ${plural(this.ctx.run.score, 'bottle')} made.`);
   },
 
   /** A fresh night: an empty shed, a plain still and an empty purse. */
   newNight() {
+    clearTimeout(this.handCooldownTimer);
+    this.handCooldownTimer = null;
     this.bottles = 0;
     this.brewAcc = 0;
     this.sellAcc = 0;
@@ -263,8 +342,9 @@ const game = {
     this.handReadyAt = 0;
     this.levels = Object.fromEntries(CHAINS.map((chain) => [chain.id, 0]));
     this.stock = [];
-    this.unavailable = new Set(shuffle(this.ctx.rng, CHAINS.filter((chain) => chain.id !== 'still'))
-      .slice(0, 2).map((chain) => chain.id));
+    const optionalChains = CHAINS.filter((chain) => !['still', 'batch-size', 'order-size'].includes(chain.id));
+    this.unavailable = new Set(shuffle(this.ctx.rng, optionalChains)
+      .slice(0, TUNING.unavailableChainsPerNight).map((chain) => chain.id));
   },
 
   /* ------------------------------------------------------------------- the clock */
@@ -282,28 +362,28 @@ const game = {
     // counted, so the still makes exactly what it would have made in the foreground and one
     // tick pays out the whole gap. The shed is what keeps a walk away honest: leave it long
     // enough and the kettle fills up and stalls like any other time.
-    for (const batch of this.stock) batch.age += dt;
-    this.brewAcc += stats.rate * dt;
+    this.brewAcc += stats.cycleRate * dt;
     let made = 0;
     while (this.brewAcc >= 1) {
       if (this.bottles >= stats.room) {
-        this.brewAcc = 1; // the kettle holds one bottle's worth and no more
+        this.brewAcc = 1; // one completed cycle waits for room in the shed
         break;
       }
       this.brewAcc -= 1;
-      this.bottles += 1;
-      made += 1;
+      const produced = Math.min(stats.batchSize, stats.room - this.bottles);
+      this.bottles += produced;
+      made += produced;
+      this.stock.push({ count: produced });
     }
-    if (made > 0) this.stock.push({ count: made, age: 0 });
     // A bottle scores the moment it is made, whether or not anybody ever buys it. Batched
     // into one call a tick, because every addPoints is a localStorage write in the shell.
     if (made > 0) this.ctx.addPoints(made);
 
-    this.sellAcc += stats.sell * dt;
+    this.sellAcc += stats.customerRate * dt;
     let earned = 0;
     while (this.sellAcc >= 1 && this.bottles > 0) {
       this.sellAcc -= 1;
-      earned += this.takeBottle(stats);
+      earned += this.sellBatch(stats, stats.orderSize).earned;
     }
     if (this.bottles <= 0) this.sellAcc = 0; // nobody waits at an empty shed
     if (earned > 0) {
@@ -339,22 +419,39 @@ const game = {
       return;
     }
     const stats = statsFrom(this.levels);
-    const worth = this.takeBottle(stats);
-    this.handReadyAt = performance.now() + 1000 / stats.hand;
-    this.cash += worth;
-    this.takings += worth;
-    this.ctx.message(`Sold a bottle at the door for $${money(worth)}.`);
+    const sale = this.sellBatch(stats, 1 + stats.orderSize);
+    const cooldown = stats.handSeconds * 1000;
+    this.handReadyAt = performance.now() + cooldown;
+    clearTimeout(this.handCooldownTimer);
+    this.handCooldownTimer = setTimeout(() => {
+      this.handCooldownTimer = null;
+      this.paint();
+    }, cooldown);
+    this.cash += sale.earned;
+    this.takings += sale.earned;
+    this.ctx.message(`Sold ${sale.count} ${plural(sale.count, 'bottle')} by hand for $${money(sale.earned)}.`);
     this.paint();
+  },
+
+  sellBatch(stats, orderSize) {
+    let count = 0;
+    let earned = 0;
+    while (count < orderSize && this.bottles > 0) {
+      earned += this.takeBottle(stats);
+      count += 1;
+    }
+    return { count, earned };
   },
 
   takeBottle(stats) {
     const batch = this.stock[0];
     if (!batch) return 0;
+    const caskBonusActive = this.bottles / stats.room > TUNING.caskBonusFillPercent / 100;
     batch.count -= 1;
     this.bottles -= 1;
     this.sold += 1;
     if (batch.count === 0) this.stock.shift();
-    return batch.age >= CASK_AGE_SECONDS ? stats.agedWorth : stats.worth;
+    return caskBonusActive ? stats.agedWorth : stats.worth;
   },
 
   paint() {
@@ -362,10 +459,10 @@ const game = {
     const run = this.ctx.run;
     const stats = statsFrom(this.levels);
 
-    this.stillValue.textContent = compact(stats.rate);
-    this.buyersValue.textContent = compact(stats.sell);
+    this.stillValue.textContent = String(stats.cycleSeconds);
+    this.buyersValue.textContent = String(stats.customerSeconds);
     this.mashValue.textContent = `$${money(stats.worth)}`;
-    this.handValue.textContent = compact(stats.hand);
+    this.handValue.textContent = String(stats.handSeconds);
     this.cashValue.textContent = `$${money(this.cash)}`;
     this.shedLabel.textContent = `${this.bottles} / ${stats.room}`;
     this.shedFill.style.transform = `scaleX(${Math.min(1, this.bottles / stats.room)})`;
@@ -373,9 +470,8 @@ const game = {
     this.ledger.textContent = `${this.sold} ${plural(this.sold, 'bottle')} sold · $${money(this.takings)} taken · $${money(this.spent)} spent`;
 
     const live = this.alive && run.state === 'running';
-    // The hand-sale button stays live for the whole night: an empty shed answers with a
-    // message rather than a dead button that flickers as bottles come and go.
-    this.ctx.setActionEnabled(live);
+    // Keep empty-stock feedback clickable, but disable the hand-sale during its cooldown.
+    this.ctx.setActionEnabled(live && performance.now() >= this.handReadyAt);
     for (const { chain, button, name, cost, effectEl, marks } of this.rows) {
       const level = this.levels[chain.id];
       if (this.unavailable.has(chain.id)) {

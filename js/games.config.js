@@ -386,7 +386,7 @@ export const GAMES = [
     accent: '#b8863b',
     scoreLabel: 'bottles',
     rules:
-      'Four chains of upgrades, one lever each: the still, the buyers, the mash and the shed. A bottle scores the moment it comes off the kettle, sold or not, and the money to buy with comes from selling them — by hand, one bottle at a time, or through the customers you pay for. A full shed stalls the still.',
+      'Upgrade the still to make more bottles per batch and reduce the seconds between production cycles, customer orders, and hand sales. Customer orders start empty and grow as you upgrade; hand-sell bottles to earn money. A bottle scores when it comes off the kettle, sold or not. A full shed stalls the still.',
     actionLabel: 'Sell a bottle',
     track: {
       title: 'Distilled: Backwoods',
