@@ -1,8 +1,9 @@
 # Moonshine — track 323, Distilled: Backwoods
 
 A ten-minute upgrade economy in **The Wilds**. One static board: a still, a shed, four
-rate readouts, and eight upgrade rows. The Still, Batch Size and Order Size are always
-available; two of the other five chains are randomly unavailable each night. **The score is what the still makes** — one point a
+rate readouts, and the upgrade rows available that night. At the start of each run, seeded
+random draws select one production route, one selling route, and one bottle-value route.
+Unselected route chains are hidden; Shed is always available. **The score is what the still makes** — one point a
 bottle, counted as it leaves the kettle, sold or not — and money is only the budget the shop
 is bought with, which is what makes the night a race between the still and the till.
 
@@ -23,57 +24,70 @@ still makes bottles (score) → the shed holds them → customers take them → 
   nothing can be lost to the end-of-run capture (see README, "Rules the code does not
   enforce"). **Money lives in `this.cash`** — the shell's score is bottles now, so it can never
   be read as a purse.
-- **The opening is the hand.** Base still: one bottle per production cycle, one cycle every
-  6s, `$2` a bottle, and the hand capped at one bottle every 6s. Customer visits begin every
-  10s, but their order size starts at zero until the first Order Size upgrade. Every bottle the
-  still makes can be walked out,
-  so the first two minutes are clicking, and the money ladder is the still and the mash —
-  **Customers does nothing at all until production passes the hand**.
-- **The hand never goes away, it just stops mattering.** It stays a real channel all night and
-  is the only thing that clears a shed the customers cannot keep up with. A dirty click answers
-  with *Still walking the last one out* rather than hitting a dead button.
+- **The opening is the hand.** Current code starts at one bottle per 5s cycle, `$1` a bottle,
+  and one hand sale every 4s. Customer visits begin every 10s, but their order size starts at
+  zero. The first purchase varies: Better Fire costs `$2` on the Still route and Double Batch
+  `$4` on the Batch Size route. Ten bottles take about 50s to produce at the base rate.
+- **Routes change the plan, not just the numbers.** Still accelerates smaller cycles; Batch
+  Size makes larger batches. The hand-sale route combines faster cooldowns from Runners with
+  larger loads from Hand Load; Customers plus Order Size automate sales. Mash raises bottle value outright;
+  Casks multiplies it only while the shed is over 75% full. Shed is always available.
 
-## The eight chains
+## The nine chains
 
-Each available chain is bought **in order** and the chains are independent. All eight rows stay
-visible; Still, Batch Size and Order Size are always available, while two of the other five
-chains are marked out for the night. The selection is drawn from the run's seeded RNG, giving
-ten possible availability sets while keeping production and batch size available in every run.
-A step's `value` is what the chain is worth once bought, not an increment.
+Each available chain is bought **in order**. `newNight()` uses the live seeded RNG to choose
+one of `still`/`batch-size`, one selling route (`runners` plus `hand-load`, or `buyers` plus
+`order-size`), and one of `mash`/`casks`. Shed is always available. Unselected route rows are
+hidden for the whole run, giving 8 route combinations. The first customer order unlocks
+automated sales, and Customers cannot be upgraded before that unlock. A step's `value` is
+what the chain is worth once bought, not an increment.
 
 | Chain | Lever | Base | Steps (cost → effect) |
 | --- | --- | --- | --- |
-| The Still | seconds per production cycle | 6s | Better Fire 10 → 5 · Copper Coil 25 → 4 · Large Still 60 → 3 · Double Still 150 → 2 · Industrial Still 400 → 1 |
-| Batch Size | bottles per batch | 1 | Double Batch 20 → 2 · Three-Bottle Batch 75 → 3 · Four-Bottle Batch 200 → 4 · Five-Bottle Batch 500 → 5 |
-| Customers | seconds per customer order | 10s | Regular Customers 20 → 8 · Bar Connection 50 → 6 · Delivery Wagon 120 → 5 · Delivery Truck 350 → 4 |
-| Order Size | bottles per customer order | 0 | First Customer Order 25 → 1 · Two-Bottle Order 100 → 2 · Three-Bottle Order 200 → 3 · Four-Bottle Order 350 → 4 |
-| The Mash | $ a bottle | $2 | Better Mash 30 → 4 · Quality Ingredients 100 → 8 · Secret Recipe 300 → 16 · Premium Moonshine 750 → 30 · Black Label 1500 → 50 |
-| The Shed | bottles that can wait | 5 | Extra Crate 15 → 10 · Storage Shed 50 → 25 · Barn 175 → 75 · Warehouse 500 → 200 |
-| Runners | seconds per hand sale | 6s | Quick Step 15 → 5 · Night Route 45 → 4 · Handcart 125 → 3 · Fast Crew 300 → 2 |
-| Aging Casks | mature bottle value multiplier | 1× | Charred Oak 20 → 1.5× · Cool Cellar 60 → 2× · Deep Cellar 175 → 2.5× · Hidden Stock 500 → 3× · Master Cooper 1200 → 4× |
+| The Still | seconds per production cycle | 5s | Better Fire 2 → 4 · Copper Coil 5 → 3 · Large Still 12 → 2 · Double Still 30 → 1 |
+| Batch Size | bottles per batch | 1 | Double Batch 4 → 2 · Three-Bottle Batch 15 → 3 · Four-Bottle Batch 40 → 4 · Five-Bottle Batch 100 → 5 |
+| Customers | seconds per customer order | 10s | Regular Customers 4 → 8 · Bar Connection 10 → 6 · Delivery Wagon 24 → 5 · Delivery Truck 70 → 4 |
+| Order Size | bottles per customer order | 0 | First Customer Order 3 → 1 · Two-Bottle Order 20 → 2 · Three-Bottle Order 40 → 3 · Four-Bottle Order 70 → 4 |
+| The Mash | $ a bottle | $1 | Better Mash 27 → 2 · Quality Ingredients 90 → 4 · Secret Recipe 270 → 8 · Premium Moonshine 675 → 15 · Black Label 1350 → 25 |
+| The Shed | bottles that can wait | 10 | Extra Crate 3 → 20 · Storage Shed 10 → 50 · Barn 35 → 150 · Warehouse 100 → 400 |
+| Runners | seconds per hand sale | 4s | Quick Step 3 → 3 · Night Route 9 → 2 · Handcart 25 → 1 |
+| Hand Load | bottles per hand press | 1 | Double Hand Load 4 → 2 · Three-Bottle Hand Load 15 → 3 · Four-Bottle Hand Load 40 → 4 · Five-Bottle Hand Load 100 → 5 |
+| Aging Casks | multiplier when shed is over 75% full | 1× | Charred Oak 2 → 2× · Cool Cellar 6 → 3× · Deep Cellar 18 → 4× · Hidden Stock 50 → 5× · Master Cooper 120 → 6× |
+
+The prices target broad progression over ten minutes: production, sales and storage steps are
+about one fifth of their former costs. Mash stays near its previous prices because it boosts
+every sale; Casks is much cheaper because its bonus only applies above the shed-fill threshold.
+A simulated active run bought 16–19 of the 20–21 available steps across the eight route sets,
+leaving at least one top-end step for another night.
 
 **The Work chain is deleted** — it was the still's own lever sold twice, and its first step
-was beaten outright by a cheaper one. **The Mash ladder is doubled with its base**: the money
-curve is the pace of the night, and at `$2` a bottle and up the whole shop is affordable
-inside ten minutes. Halving the ladder halves the pace. At the ceiling, production is five
-bottles each second; customers place up to four bottles every four seconds and hand sales move
-up to four every two seconds. Combined sales average three bottles a second, keeping the shed
-relevant.
+was beaten outright by a cheaper one. Upgrade values are generated from the current bases and
+rounded to whole units; only strict improvements become purchasable steps. Consequently, the
+Still has four active steps (the configured `$400` Industrial Still is not generated after the
+cycle reaches 1s), and Runners has three (4s to 3s to 2s to 1s; the fourth configured step
+does not improve the rounded interval).
+
+At the ceiling, either production build makes 1 bottle/s: a one-bottle cycle every second, or
+five bottles every five seconds. Customers can sell four bottles every 4s (1/s). On the hand
+route, Runners reduce the cooldown to 1s and Hand Load raises each press to five bottles, so
+active clicking can sell up to 5/s. The hand-sale action remains available on every route, but
+only the selected route's upgrades are shown. The shed remains a meaningful buffer.
 
 ## What a row says
 
 Every row prints **what the step does**, in that chain's own unit, and nothing else:
 
-> `6 → 5 seconds per cycle`
-> `1 → 2 bottles per batch`
-> `0 → 1 bottle per customer order`
-> `$2 → $4 a bottle`
-> `5 → 10 bottles`
+> `5 → 4 seconds per cycle · 1 every 4s`
+> `1 → 2 bottles per batch · 2 every 5s`
+> `0 → 1 bottle per order · every 10s`
+> `$1 → $2 a bottle`
+> `10 → 20 bottles`
+> `1 → 2 bottles per press · 2 every 2s`
 
-**Only the change.** Whether a step is worth its price before the bell is the question the
-player came to answer, so the board never does the sum for them — no payback times, no
-projected bottles, no break-even. Production, customer, and hand-sale readouts are whole
-seconds per event; batch and order sizes are whole bottles.
+**The local change plus its route context.** The board shows combined batch/cycle,
+order/visit, and hand-load/cooldown quantities, plus the Casks trigger count as Shed capacity
+changes. Mash and Casks are alternative price routes, not a combined bonus. No hidden combo
+bonuses, payback times, projected bottles, or break-even calculations are added.
 
 **No model on the board at all.** There was a projection in here once: `bottlesOver()` and
 `moneyOver()` counted the rest of the night from the current shed, and a row printed what the
@@ -81,29 +95,28 @@ step was worth — or named the chain that was supposedly holding it back when i
 nothing. It is gone, for three reasons. It answered the player's own question for them. It was
 never quite right: with a full shed, a still row said *the buyers set the pace*, which is
 backwards, because the shelf was the limit. And it put a second thing on a row that already
-says what it does. Everything needed to work it out is on the board — bottles a second, buyers
-a second, dollars a bottle, bottles waiting, and the clock.
+says what it does. The board shows cycle interval, customer interval, bottle value, hand-sale
+interval, shed occupancy, and each next upgrade's local effect; it does not forecast whole-run
+production, cash, or payback.
 
 What survives from that model is the shape of the night, which is why the chains are priced
 where they are:
 
-- **Capacity is score.** Production is batch size divided by seconds per cycle; customer sales
-  are order size divided by seconds between orders, while each hand sale moves one bottle.
-  Whatever the shelf can hold is bottles banked, and past that
-  production is capped at what actually leaves. That is
-  the whole reason the shed is worth buying, and the reason the score is bottles made rather
-  than bottles sold.
-- **A stalled still is a bottle a second lost.** With the shed full the kettle holds one
-  bottle's worth and waits, so the bar and the *Shed full* line are the only warning needed.
-- **Every chain has a real purpose.** Without the still nothing is made, without the mash a
-  bottle is worth `$2`, before the first Order Size upgrade only hand sales bring in cash, and without the shed
-  every stall is thrown away.
-- **Runners improve the hand-sale interval from 6s to 2s.** Customers reach one order every
-  4s; Order Size tops out at four bottles per customer order, while hand sales stay at one
-  bottle each. Combined sales remain below the Still's 5 bottles/s top rate. The Runners row and interval readout make the active sales
-  channel's contribution explicit.
-- **Aging Casks pay a premium for stock held for 30 seconds.** Stock sells oldest first, so
-  this rewards spare shed capacity without changing the base value of freshly made bottles.
+- **Capacity protects production, not stored score.** Bottles score when produced. The shed
+  limits how many can wait to be sold; once full, the still stalls and future scoring stops.
+  Customer sales move up to Order Size bottles per order; hand sales move up to the selected
+  Hand Load size per press.
+- **A stalled still loses future production.** With the shed full, one completed cycle waits
+  (`brewAcc = 1`) until a sale opens room; then the next batch can start immediately.
+- **Before the first customer order, only hand sales earn cash.** Customer frequency upgrades
+  are disabled until the first order unlocks the automated-selling route. At base Mash value,
+  each sold bottle earns `$1`.
+- **The sale routes work differently.** Runners improve hand-sale interval from 2s to 1s;
+  Hand Load increases bottles per press while retaining the 2s cooldown. Customer Order Size
+  affects automated sales only. At Order Size 4, a customer visit can sell four bottles.
+- **Aging Casks currently reward a full shed, not elapsed age.** A sale earns the multiplied
+  value only when the shed is over 75% full at that moment. Stock is FIFO but has no age
+  timestamp; the 30-second maturation described in an earlier design is not implemented.
 
 ## The clock, and what happens at the bell
 
@@ -128,33 +141,32 @@ where they are:
 
 ## Boundaries (do not change these without asking)
 
-- **Nothing unlocks anything else.** Progression is sequential within each chain and independent
-  across chains. The Still, Batch Size and Order Size are always available; two of the other five
-  chains are unavailable each night.
+- **Routes are set for the whole run.** One production chain, one of the two selling routes,
+  and one price chain are drawn at start. Alternative rows are hidden. Shed remains available
+  on every route; the first customer order unlocks automation on the customer route.
 - **The score is bottles made.** Do not move it to bottles sold or to cash: sold caps at
   `sell × T` and makes the shed dead weight, and cash makes every purchase look like losing.
-- **Never let maximum sales reach maximum production.** Customers top out at one order every
-  4s with four bottles, Runners at one hand sale every 2s with one bottle, for 1.5 bottles/s
-  combined; this stays below the Still's one cycle/s × five bottles/batch (5 bottles/s).
-  Otherwise the shelf never fills and
-  the Shed chain is unsellable.
-- **The hand-sale stays a secondary channel.** Runners improve hand-sale frequency; Order Size
-  affects customer orders only. A run with no clicking at all still works from the first second,
-  though customers bring in no cash until their order size is upgraded.
-- **The rows state the change and nothing else.** No projections, no payback times, no pace
-  lines, no verdicts on an upgrade. `hand-sold only` was the wrong string because it blamed the
-  upgrade for a hole in the economy; the hole was closed instead, with the base customer rate —
-  and the pace lines went the same way as the projection that fed them.
-- One module, one stylesheet, under the 500-line budget; the eight chains are data, so another
-  upgrade step is one array entry and no new code.
+- **Throughput depends on the route.** Either production build reaches 1 bottle/s. Customer
+  orders reach 1 bottle/s without input; the combined hand route can reach 5/s with clicks
+  and stock, so the shed and hand action become important.
+- **Session variation is randomized, not purchased.** There are 2 production × 2 selling × 2
+  price combinations. Mash and Casks are mutually exclusive; Casks can combine with the
+  always-available Shed. All route draws use the seeded run RNG.
+- **Rows expose local effects, not forecasts.** They show combined production, customer and
+  hand-sale throughput plus the Casks trigger as shed capacity changes. No projections,
+  payback times, or extra combo bonuses are added.
+- The nine upgrade chains are data-driven, so a new step remains one array entry rather than
+  custom purchase logic.
 - The board is `width: min(440px, 100%)`, the rows are real buttons (tap targets the whole
   width of the row), nothing binds a key, and the still is drawn with `svgEl`/`svgPath`.
 
 ## Left open
 
-- **The opening is about a minute to the first purchase** ($20 of customers, one bottle every
-  6s at `$2`, with the neighbor taking one every 10s). If that reads slow, the dials are the
-  Still's `base` 6 seconds and the Customers `base` 10 seconds — every listed cost keeps working.
+- **The first purchase depends on the drawn route.** Better Fire costs `$2` on the Still
+  route; Double Batch costs `$4` on the Batch Size route. Ten base-value bottles take about
+  50s to produce, while hand sales require active clicks. On the customer route, the first
+  order costs `$3` and unlocks automation. Whether this opening is too repetitive needs a
+  playtest; changing the starting rate or earliest price also changes every purchase path.
 - **The plan's end-of-run breakdown cannot live on the summary panel** — the shell's
   `showSummary` takes no content from a table. Sales, spend and bottles-out are on a live
   ledger line at the foot of the board instead, and the final cash is the HUD score and the

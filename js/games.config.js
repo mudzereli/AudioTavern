@@ -386,8 +386,8 @@ export const GAMES = [
     accent: '#b8863b',
     scoreLabel: 'bottles',
     rules:
-      'Upgrade the still to make more bottles per batch and reduce the seconds between production cycles, customer orders, and hand sales. Customer orders start empty and grow as you upgrade; hand-sell bottles to earn money. A bottle scores when it comes off the kettle, sold or not. A full shed stalls the still.',
-    actionLabel: 'Sell a bottle',
+      'Each run randomly draws a production path (faster cycles or larger batches), a selling path (hand sales with cooldown and load upgrades, or customer orders with visit-speed and order-size upgrades), and a price path (Mash or Casks). Other paths are unavailable that night; Shed is always available. Customer orders require the first Order Size upgrade. Casks pay extra when the shed is over 75% full. Bottles score when made, and a full shed stalls the still.',
+    actionLabel: 'Sell by hand',
     track: {
       title: 'Distilled: Backwoods',
       audioUrl: 'https://sounds.tabletopaudio.com/323_Distilled_Backwoods.mp3',

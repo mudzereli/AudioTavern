@@ -54,7 +54,7 @@ folder to any static host — no compilation, no dependencies.
 | Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed circuit brings a longer route. | Wizard's Tower |
 | Fishing Village | Catchbook fishing | Cast through shifting day, night, and weather; fill 18 fish slots for first-catch rewards. | Fishing Village |
 | The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. A crate filled to its last square pays the trip twice. | Homecoming |
-| Moonshine | Upgrade economy | A backyard still, a shed of bottles and four chains of upgrades bought out of the night's takings: the score is the bottles the still makes, and every row prints what its next step changes and nothing else. | Distilled: Backwoods |
+| Moonshine | Upgrade economy | Every run draws faster cycles or larger batches, hand sales or customer orders, and Mash or Casks; only Shed is always available. Hand sales can upgrade both cooldown and load. The score remains bottles made. | Distilled: Backwoods |
 
 The hub shows one flat list — a compact row per table — because nineteen tables across nine
 wings is too many wings to spend a section heading and a blurb on each. A wing is a **label on
