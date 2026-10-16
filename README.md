@@ -53,7 +53,7 @@ folder to any static host — no compilation, no dependencies.
 | Fire Dance | Pyre management | Keep the light reaching it: dancing turns the rite and stokes the fire, feeding raises the fence, and the wood is out in the dark. | Fire Dance |
 | Wizard's Tower | Starlight routing | Rotate runes to connect the tower to the altar; each completed circuit brings a longer route. | Wizard's Tower |
 | Fishing Village | Catchbook fishing | Cast through shifting day, night, and weather; fill 18 fish slots for first-catch rewards. | Fishing Village |
-| The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. A crate filled to its last square pays the trip twice. | Homecoming |
+| The Gift Cart | Crate packing | Villagers bring parcels one at a time; pack the ones that fit, turning a parcel to make it fit. Later trips bring five-square shapes; a crate filled to its last square pays the trip twice. | Homecoming |
 | Moonshine | Upgrade economy | Every run draws faster cycles or larger batches, hand sales or customer orders, and Mash or Casks; only Shed is always available. Hand sales can upgrade both cooldown and load. The score remains bottles made. | Distilled: Backwoods |
 
 The hub shows one flat list — a compact row per table — because nineteen tables across nine

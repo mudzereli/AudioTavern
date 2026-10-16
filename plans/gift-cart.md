@@ -34,6 +34,7 @@ and no way to lose anything.
 | 2 | domino | 3-5 |
 | 3 | 1x3 bar, L corner | 6-8 |
 | 4 | 2x2 square, T, 4-long L, S | 9-12 |
+| 5 | plus, U | 12-15 |
 
 Bigger parcels pay more per square but fit in fewer ways; small ones are cheap but flexible.
 Three crate rows is what makes the shape set worth turning — a bar stands upright in one
@@ -41,13 +42,15 @@ column, and the corner, the square and the tetrominoes get real placement choice
 
 Since a size brings every shape of that size in at once, size 4's shapes are gated one at a
 time instead: the 2x2 square from trip 6 (the first trip size 4 is dealt at all), the T from
-7, the 4-long L from 9, the S from 11. `SHAPES` carries `from`, `shapePool()` filters on it,
-and an empty pool falls back to the whole size — `pick()` on an empty list returns
-`undefined` and the next paint throws reaching into it.
+7, the 4-long L from 9, and the S from 11. Five-square parcels enter the mix on trip 13;
+the plus is available then and the U joins on trip 15. `SHAPES` carries `from`,
+`shapePool()` filters on it, and an empty pool falls back to the whole size — `pick()` on
+an empty list returns `undefined` and the next paint throws reaching into it.
 
 Size mix, by trip: trips 1-2 draw singles and dominoes only (`{1: 4, 2: 6}`); trips 3-5 add
 bars and corners (`{1: 2, 2: 4, 3: 3}`); from trip 6 all four sizes are in (`{1: 1, 2: 3,
-3: 3, 4: 3}`). Difficulty is packing, never a deadline.
+3: 3, 4: 3}`); from trip 13, size 5 joins at weight 2 (`{1: 1, 2: 3, 3: 3, 4: 3, 5: 2}`).
+Difficulty is packing, never a deadline.
 
 The `1:` weight is the difficulty dial. A single is the only parcel that fits any hole —
 including the last one — so thinning singles out is what leaves a player holding three
@@ -97,13 +100,17 @@ how much slack the rolling hand has.
   still be acted on: on the chip in the line, and the crate's worth on the button. This is
   also why there is no longer a "where does the label go" rule — the L's elbow answered it,
   and one icon per square made the question go away. The icon is a share of the square
-  (`min(52%, 22px)`) rather than a fixed size, so the smaller squares of a six-column crate
-  shrink their icons with them instead of crowding the tile.
+  (`min(82%, 32px)`) rather than a fixed size, so it grows when the squares allow and
+  shrinks with the smaller cells of a six-column crate. Each gift is a small folk-art
+  silhouette with a dark outline and restrained highlights, using a coordinated palette
+  of rust, teal, leaf green, berry, amber and straw gold. The line chip also shows one
+  compact gift icon beside its parcel footprint and value; the footprint stays visible
+  because it is the placement clue, while the icon adds recognition and finish.
 - `Set off` is the shell's primary action, and the table takes it: `ctx.actionBar` is moved
   into the table's own column between the line and the hint, the way `bones`, `pig`,
   `danse-de-vampyr` and `assassins-bazaar` do it. Nothing about the button's behaviour
   changes — `act()` is still the shell calling in.
 - Keep `js/games/gift-cart.js` at or below 500 lines (compacted 639 -> 492 on 2026-09-28, the
   same pass as `assassins-bazaar`'s 654 -> 491). The module carries the invariants only; the
-  reasoning behind the rendering rules lives here. Parcel art is drawn inline with `svgEl` /
-  `svgPath`; there are no asset files.
+  reasoning behind the rendering rules lives here. Parcel art is drawn inline with `svgEl`;
+  there are no asset files.

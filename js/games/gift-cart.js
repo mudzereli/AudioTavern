@@ -5,7 +5,7 @@
    game is choosing what goes and turning a parcel until it fits.
    --------------------------------------------------------------------------- */
 
-import { el, plural, svgEl, svgPath } from '../dom.js';
+import { el, plural, svgEl } from '../dom.js';
 import { pick, randInt, shuffle } from '../rng.js';
 
 const ROWS = 3;
@@ -39,19 +39,21 @@ const SHAPES = [
   { id: 'tee', cells: [[0, 0], [1, 0], [2, 0], [1, 1]], from: 7 },
   { id: 'ell', cells: [[0, 0], [0, 1], [0, 2], [1, 2]], from: 9 },
   { id: 'snake', cells: [[1, 0], [2, 0], [0, 1], [1, 1]], from: 11 },
+  { id: 'plus', cells: [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]], from: 13 },
+  { id: 'u', cells: [[0, 0], [2, 0], [0, 1], [1, 1], [2, 1]], from: 15 },
 ];
 
 /** What a parcel of each size is worth. Bigger pays more per square. */
-const VALUES = { 1: [1, 2], 2: [3, 5], 3: [6, 8], 4: [9, 12] };
+const VALUES = { 1: [1, 2], 2: [3, 5], 3: [6, 8], 4: [9, 12], 5: [12, 15] };
 
-/** Parcel art and colour: a gift is a name, a tint and a few strokes. */
+/** Parcel art and colour: folk-art silhouettes in one warm, coordinated palette. */
 const KINDS = [
-  { id: 'loaf', name: 'Loaf', tint: '#c98a4b', paths: ['M3 12.5c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5V15H3z', 'M7.4 10l2 2.4M11.6 9.4l2 2.4'] },
-  { id: 'jug', name: 'Jug', tint: '#6d94a8', paths: ['M7 3.5h6v3l1.2 2.2V15a2 2 0 0 1-2 2H7.8a2 2 0 0 1-2-2V8.7L7 6.5z', 'M14.4 8.6c2.1.3 3.1 1.8 3.1 3.4s-1 3.1-3.1 3.4'] },
-  { id: 'jar', name: 'Jar', tint: '#7fa05f', paths: ['M6.2 6.5h7.6V15a2 2 0 0 1-2 2H8.2a2 2 0 0 1-2-2z', 'M5 3.5h10v3H5z'] },
-  { id: 'ribbon', name: 'Ribbon', tint: '#c2708a', paths: ['M10 9.4C8.4 6.6 4.2 6.2 3.6 8.4c-.6 2.2 4.2 3.4 6.4 1', 'M10 9.4c1.6-2.8 5.8-3.2 6.4-1 .6 2.2-4.2 3.4-6.4 1', 'M9.2 10.4L7 17.5M10.8 10.4l2.2 7.1'] },
-  { id: 'lantern', name: 'Lantern', tint: '#d98f3a', paths: ['M7.2 7.4h5.6v8H7.2z', 'M8.2 7.4c0-3.2 3.6-3.2 3.6 0', 'M6.2 15.4h7.6v2.2H6.2z'] },
-  { id: 'cheese', name: 'Cheese', tint: '#d6c268', paths: ['M3.4 15.4l6.8-8.9 6.4 2.6v6.3z', 'M8.6 12.4h.1M12.4 12.9h.1M10.4 10.2h.1'] },
+  { id: 'loaf', name: 'Loaf', tint: '#c47a43', shape: 'M2.5 12.6c0-3.8 3.2-6.9 7.5-6.9s7.5 3.1 7.5 6.9v2.8h-15z', detail: 'M6 9.1l1.6 2.1m3.4-3.1 1.6 2.1', shine: 'M4.2 13.8h3.2' },
+  { id: 'jug', name: 'Jug', tint: '#4f817d', shape: 'M7 2.6h6v3.1l1.5 2.1v7.1a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2V7.8L7 5.7z', detail: 'M14.5 8.3c2 .2 3 1.5 3 3s-1 2.7-3 3.1M7.5 6.5h5', shine: 'M7.8 9v4.5' },
+  { id: 'jar', name: 'Jar', tint: '#718253', shape: 'M5.2 6h9.6v8.9a2 2 0 0 1-2 2H7.2a2 2 0 0 1-2-2zM4.2 3.4h11.6v2.5H4.2z', detail: 'M7.2 9h5.6v3.2H7.2z', shine: 'M5.7 7.3h1.1' },
+  { id: 'ribbon', name: 'Ribbon', tint: '#a85d60', shape: 'M10 8.8C7.8 5.3 3.1 5.3 3.1 7.9c0 2.4 3.8 3.3 6.3 2.3L7.2 16.8l2.5-1.3 2.6 1.3-1.6-6.6c2.5 1 6.2.1 6.2-2.3 0-2.6-4.7-2.6-6.9.9z', detail: 'M9.7 9.5 6.1 7.6m4.3 1.9L14 7.6', shine: 'M4.3 8.1c.6-.7 1.6-.9 2.5-.5' },
+  { id: 'lantern', name: 'Lantern', tint: '#d49a42', shape: 'M8 6.7h4v1.4h1.7v6.3h-7.4V8.1H8zM6 14.5h8v2H6zM8.6 6.5c0-2 2.8-2 2.8 0', detail: 'M8.1 9.2v4m3.8-4v4m-3.8-2h3.8', shine: 'M7.4 9.2v3.4' },
+  { id: 'cheese', name: 'Cheese', tint: '#ccb65e', shape: 'M3 15.5 9.9 5.2 17 8.3v7.2z', detail: 'M8 12a.55.55 0 1 0 1.1 0a.55.55 0 1 0-1.1 0M12 13a.55.55 0 1 0 1.1 0a.55.55 0 1 0-1.1 0', shine: 'M4.8 14.4 7 11.2' },
 ];
 
 /** A quarter turn clockwise, shifted back so its box starts at 0,0. */
@@ -140,15 +142,18 @@ function weightedSize(rng, weights) {
 }
 
 /**
- * Trips 1-2 keep to singles and dominoes; the heavy shapes arrive later. Singles thin out
- * as the run goes on, and that is the difficulty dial: a single is the only parcel that
- * fits any hole, so a line with fewer of them is one that can leave you holding three
- * parcels that do not fit and setting off early.
+ * Trips 1-2 keep to singles and dominoes; the heavy shapes arrive later. Five-square
+ * parcels join the mix on trip 13. Singles thin out as the run goes on, and that is the
+ * difficulty dial: a single is the only parcel that fits any hole, so a line with fewer
+ * of them is one that can leave you holding three parcels that do not fit and setting off
+ * early.
  */
 function sizeWeights(trip) {
   if (trip <= 2) return { 1: 4, 2: 6, 3: 0, 4: 0 };
   if (trip <= 5) return { 1: 2, 2: 4, 3: 3, 4: 0 };
-  return { 1: 1, 2: 3, 3: 3, 4: 3 };
+  return trip < 13
+    ? { 1: 1, 2: 3, 3: 3, 4: 3 }
+    : { 1: 1, 2: 3, 3: 3, 4: 3, 5: 2 };
 }
 
 /**
@@ -452,7 +457,9 @@ const game = {
       // only has to say what it is worth.
       el('span', 'gift__chip-meta', `${gift.value} pts`),
     );
-    node.append(this.buildShapePreview(gift.shape.turns[gift.turn]), text);
+    const art = this.buildArt(gift);
+    art.classList.add('gift__art--chip');
+    node.append(art, this.buildShapePreview(gift.shape.turns[gift.turn]), text);
 
     const label = `${gift.kind.name}, ${plural(gift.size, 'square')} (${gift.shape.id}), ${gift.value} points`;
     node.setAttribute('aria-label', this.selected === gift ? `${label} — tap again to turn it` : label);
@@ -475,7 +482,11 @@ const game = {
   buildArt(gift) {
     const art = svgEl('svg', { viewBox: '0 0 20 20', 'aria-hidden': 'true', focusable: 'false' });
     art.classList.add('gift__art');
-    for (const d of gift.kind.paths) art.append(svgPath(d, 1.5));
+    art.append(
+      svgEl('path', { d: gift.kind.shape, class: 'gift__art-shape' }),
+      svgEl('path', { d: gift.kind.detail, class: 'gift__art-detail' }),
+      svgEl('path', { d: gift.kind.shine, class: 'gift__art-shine' }),
+    );
     return art;
   },
 };

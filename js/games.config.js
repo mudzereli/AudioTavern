@@ -370,7 +370,7 @@ export const GAMES = [
     accent: '#c2708a',
     scoreLabel: 'points',
     rules:
-      'Villagers bring gifts to the cart one at a time. Each parcel takes one to four squares of the crate, and a bigger parcel pays more — but the line is always longer than the crate, so choose what goes and click a parcel again to turn it until it fits. Set off whenever you like, and a crate filled to its very last square pays the whole trip a second time.',
+      'Villagers bring gifts to the cart one at a time. Each parcel takes one to five squares of the crate, with complex five-square shapes arriving on later trips. Bigger parcels pay more — but the line is always longer than the crate, so choose what goes and click a parcel again to turn it until it fits. Set off whenever you like, and a crate filled to its very last square pays the whole trip a second time.',
     actionLabel: 'Set off',
     track: {
       title: 'Homecoming',
