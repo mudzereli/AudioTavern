@@ -9,7 +9,7 @@ A quiet shoreline collection game for Tabletop Audio track 167. Each ten-minute 
 3. Click a spot to cast. All spots lock for four seconds while one quiet ripple cues the drifting float. The result is automatic; there is no timing input.
 4. A roll for an unavailable fish is an empty bite. It is not rerolled, redistributed, or scored. The result names no fish, preserving the blackout.
 5. Catch all twelve available species to earn 30 bonus points. A fresh randomized set appears immediately; the ten-minute clock continues.
-6. Common, uncommon, and rare fish are worth 1, 2, and 3 points. Each species' first catch in the entire run pays 10 times its value; repeats pay normal value, even when a new set begins. Set progress resets, but run-wide counts and score do not.
+6. Common, uncommon, and rare fish are worth 1, 2, and 3 points. Each species' first catch in the entire run pays 10 times its value; repeats pay normal value, even when a new set begins. Set progress, revealed identities, and silhouettes reset; run-wide counts and score do not.
 
 ## Spots and fish
 
@@ -25,7 +25,7 @@ Every condition uses the same outcome rates: 40% common, 20% uncommon, 18% curre
 
 An available common shows 40%, an uncommon 20%, an in-season rare 18%, each partially matching out-of-season rare 10%, and the fully mismatched out-of-season rare 2%. A spot's displayed no-bite chance is the sum of all blocked outcomes. Those outcomes plus available-fish chances total 100%.
 
-The inline field guide uses distinct folk-art fish silhouettes: large icons fill their entries, staying neutral silhouettes with the name “Unknown fish” until a fish is first caught in the run, then revealing its name, muted species colors, dark ink outlines, crisp dark eyes, and clear cream details. Available fish show their current catch chance; caught-this-set fish are marked. Unavailable fish are omitted entirely. Show progress per spot (`0 / 4`) and per set (`0 / 12`). A set completion receives a brief visual celebration before the next set appears. No separate collection screen is used.
+The inline field guide uses distinct folk-art fish silhouettes: large icons fill their entries, staying neutral silhouettes with the name “Unknown fish” until a fish is first caught in the current set, then revealing its name, muted species colors, dark ink outlines, crisp dark eyes, and clear cream details. At the next set, all identities are hidden again. Available fish show their current catch chance; caught-this-set fish are marked. Unavailable fish are omitted entirely. Show progress per spot (`0 / 4`) and per set (`0 / 12`). A set completion receives a brief visual celebration before the next set appears. No separate collection screen is used.
 
 ## Boundaries
 

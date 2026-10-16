@@ -470,14 +470,13 @@ const game = {
         const isAvailable = available.has(species.id);
         const caught = this.setFound.has(species.id);
         const runCount = this.fishCounts.get(species.id) || 0;
-        const fishName = runCount > 0 ? species.name : 'Unknown fish';
+        const fishName = caught ? species.name : 'Unknown fish';
         entry.hidden = !isAvailable;
         entry.classList.toggle('fishing__species--caught', caught);
         entry.classList.toggle('fishing__species--last-catch', isAvailable && species.id === this.lastCaughtId);
-        // The run tally only ever decides whether the x10 first-catch bonus is still
-        // there, so the slot shows a mark rather than a digit. The counts themselves are
-        // in the spot's aria-label below.
-        entry.classList.toggle('fishing__species--landed', runCount > 0);
+        // Discovery resets with each set; run counts remain available for scoring and the
+        // spot's aria-label below.
+        entry.classList.toggle('fishing__species--landed', caught);
         name.textContent = isAvailable ? fishName : '';
         // The percentage is the whole row. Rarity and the off-season note were two more
         // tokens doing the same job, and the odds already rank themselves (40 / 20 / 18 /
