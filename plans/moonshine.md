@@ -44,34 +44,36 @@ what the chain is worth once bought, not an increment.
 
 | Chain | Lever | Base | Steps (cost → effect) |
 | --- | --- | --- | --- |
-| The Still | seconds per production cycle | 5s | Better Fire 2 → 4 · Copper Coil 5 → 3 · Large Still 12 → 2 · Double Still 30 → 1 |
+| The Still | seconds per production cycle | 5s | Better Fire 2 → 4 · Copper Coil 5 → 3 · Large Still 12 → 2 · Double Still 30 → 1.25 · Industrial Still 400 → 0.6 |
 | Batch Size | bottles per batch | 1 | Double Batch 4 → 2 · Three-Bottle Batch 15 → 3 · Four-Bottle Batch 40 → 4 · Five-Bottle Batch 100 → 5 |
 | Customers | seconds per customer order | 10s | Regular Customers 4 → 8 · Bar Connection 10 → 6 · Delivery Wagon 24 → 5 · Delivery Truck 70 → 4 |
 | Order Size | bottles per customer order | 0 | First Customer Order 3 → 1 · Two-Bottle Order 20 → 2 · Three-Bottle Order 40 → 3 · Four-Bottle Order 70 → 4 |
-| The Mash | $ a bottle | $1 | Better Mash 27 → 2 · Quality Ingredients 90 → 4 · Secret Recipe 270 → 8 · Premium Moonshine 675 → 15 · Black Label 1350 → 25 |
-| The Shed | bottles that can wait | 10 | Extra Crate 3 → 20 · Storage Shed 10 → 50 · Barn 35 → 150 · Warehouse 100 → 400 |
+| The Mash | $ a bottle | $1 | Better Mash 23 → 2 · Quality Ingredients 75 → 4 · Secret Recipe 225 → 8 · Premium Moonshine 563 → 15 · Black Label 1125 → 25 |
+| The Shed | bottles that can wait | 10 | Extra Crate 2 → 20 · Storage Shed 5 → 35 · Barn 9 → 55 · Warehouse 14 → 75 |
 | Runners | seconds per hand sale | 4s | Quick Step 3 → 3 · Night Route 9 → 2 · Handcart 25 → 1 |
 | Hand Load | bottles per hand press | 1 | Double Hand Load 4 → 2 · Three-Bottle Hand Load 15 → 3 · Four-Bottle Hand Load 40 → 4 · Five-Bottle Hand Load 100 → 5 |
 | Aging Casks | multiplier when shed is over 75% full | 1× | Charred Oak 2 → 2× · Cool Cellar 6 → 3× · Deep Cellar 18 → 4× · Hidden Stock 50 → 5× · Master Cooper 120 → 6× |
 
-The prices target broad progression over ten minutes: production, sales and storage steps are
-about one fifth of their former costs. Mash stays near its previous prices because it boosts
-every sale; Casks is much cheaper because its bonus only applies above the shed-fill threshold.
-A simulated active run bought 16–19 of the 20–21 available steps across the eight route sets,
-leaving at least one top-end step for another night.
+The prices target broad progression over ten minutes: production and sales steps are about one
+fifth of their former costs. Mash is about 17% cheaper than its previous prices, while staying
+more expensive than Casks because its better bottle value applies to every sale. Casks is
+conditional on the shed being over 75% full. Shed costs $30 to max and holds 75 bottles: a
+short buffer for sales falling behind, rather than a hundreds-bottle stockpile. In a simulated
+active ten-minute run, the revised prices bought 17–19 of the 20–21 available upgrades across
+the eight routes.
 
 **The Work chain is deleted** — it was the still's own lever sold twice, and its first step
-was beaten outright by a cheaper one. Upgrade values are generated from the current bases and
-rounded to whole units; only strict improvements become purchasable steps. Consequently, the
-Still has four active steps (the configured `$400` Industrial Still is not generated after the
-cycle reaches 1s), and Runners has three (4s to 3s to 2s to 1s; the fourth configured step
-does not improve the rounded interval).
+was beaten outright by a cheaper one. Upgrade values are generated from the current bases; most chains round to whole units, while the
+Still keeps two decimal places so its late intervals can be fractional. Only strict improvements
+become purchasable steps. The Still has five active steps down to 0.6s, and Runners has three
+(4s to 3s to 2s to 1s; the fourth configured step does not improve the rounded interval).
 
-At the ceiling, either production build makes 1 bottle/s: a one-bottle cycle every second, or
-five bottles every five seconds. Customers can sell four bottles every 4s (1/s). On the hand
-route, Runners reduce the cooldown to 1s and Hand Load raises each press to five bottles, so
-active clicking can sell up to 5/s. The hand-sale action remains available on every route, but
-only the selected route's upgrades are shown. The shed remains a meaningful buffer.
+At the ceiling, the Still route makes about 1.67 bottles/s (one bottle every 0.6s); Batch Size
+makes 8 every 5s (1.6/s). Customers can sell four bottles every 4s (1/s), so either maxed
+production route can outpace them and fill the Shed. On the hand route, Runners reduce the
+cooldown to 1s and Hand Load raises each press to five bottles, so active clicking can sell up
+to 5/s. The hand-sale action remains available on every route, but only the selected route's
+upgrades are shown. The shed remains a meaningful buffer.
 
 ## What a row says
 

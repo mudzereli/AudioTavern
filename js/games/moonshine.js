@@ -22,29 +22,24 @@ const TUNING = {
   initialCustomerOrderSeconds: 10, initialCustomerOrderSize: 0,
   initialHandSaleSeconds: 4, initialHandSaleSize: 1,
   initialBottleValue: 1, initialShedCapacity: 10, initialAgingMultiplier: 1,
-  cycleStepDecrements: [1, 2, 3, 4], batchSizeStepPercentages: [200, 300, 400, 500],
+  cycleStepPercentages: [80, 60, 40, 25, 12], batchSizeStepPercentages: [200, 400, 600, 800],
   customerOrderSizeIncrements: [1, 2, 3, 4], customerIntervalStepPercentages: [80, 60, 50, 40],
-  bottleValueStepPercentages: [200, 400, 800, 1500, 2500], shedCapacityStepPercentages: [200, 500, 1500, 4000],
+  bottleValueStepPercentages: [200, 300, 400, 600, 800], shedCapacityStepPercentages: [200, 350, 550, 750],
   handSaleStepPercentages: [83, 67, 50, 33], handSaleSizeIncrements: [1, 2, 3, 4],
-  agingMultiplierStepPercentages: [200, 300, 400, 500, 600],
+  agingMultiplierStepPercentages: [200, 400, 600, 800, 1000],
 };
 
-function scaledSteps(base, steps, percentages, direction) {
+function scaledSteps(base, steps, percentages, direction, precision = 0) {
   const values = [];
   let previous = base;
   for (const percentage of percentages) {
-    const value = Math.round(base * percentage / 100);
+    const scaled = base * percentage / 100;
+    const value = precision ? Number(scaled.toFixed(precision)) : Math.round(scaled);
     const improves = direction === 'up' ? value > previous : value > 0 && value < previous;
     if (!improves) continue;
     values.push(value);
     previous = value;
   }
-  return steps.slice(0, values.length).map((step, index) => ({ ...step, value: values[index] }));
-}
-
-function decrementedSteps(base, steps, decrements, minimum = 1) {
-  const values = decrements.map((decrement) => base - decrement)
-    .filter((value) => value >= minimum && value < base);
   return steps.slice(0, values.length).map((step, index) => ({ ...step, value: values[index] }));
 }
 
@@ -61,13 +56,13 @@ const CHAINS = [
     id: 'still', label: 'The Still',
     // Seconds per production cycle; Batch Size sets bottles made by each cycle.
     base: TUNING.initialCycleSeconds,
-    steps: decrementedSteps(TUNING.initialCycleSeconds, [
+    steps: scaledSteps(TUNING.initialCycleSeconds, [
       { name: 'Better Fire', cost: 2 },
       { name: 'Copper Coil', cost: 5 },
       { name: 'Large Still', cost: 12 },
       { name: 'Double Still', cost: 30 },
       { name: 'Industrial Still', cost: 400 },
-    ], TUNING.cycleStepDecrements),
+    ], TUNING.cycleStepPercentages, 'down', 2),
   },
   {
     id: 'batch-size', label: 'Batch Size',
@@ -104,21 +99,21 @@ const CHAINS = [
     id: 'mash', label: 'The Mash',
     base: TUNING.initialBottleValue,
     steps: scaledSteps(TUNING.initialBottleValue, [
-      { name: 'Better Mash', cost: 27 },
-      { name: 'Quality Ingredients', cost: 90 },
-      { name: 'Secret Recipe', cost: 270 },
-      { name: 'Premium Moonshine', cost: 675 },
-      { name: 'Black Label', cost: 1350 },
+      { name: 'Better Mash', cost: 20 },
+      { name: 'Quality Ingredients', cost: 40 },
+      { name: 'Secret Recipe', cost: 60 },
+      { name: 'Premium Moonshine', cost: 80 },
+      { name: 'Black Label', cost: 100 },
     ], TUNING.bottleValueStepPercentages, 'up'),
   },
   {
     id: 'shed', label: 'The Shed',
     base: TUNING.initialShedCapacity,
     steps: scaledSteps(TUNING.initialShedCapacity, [
-      { name: 'Extra Crate', cost: 3 },
-      { name: 'Storage Shed', cost: 10 },
-      { name: 'Barn', cost: 35 },
-      { name: 'Warehouse', cost: 100 },
+      { name: 'Extra Crate', cost: 2 },
+      { name: 'Storage Shed', cost: 5 },
+      { name: 'Barn', cost: 9 },
+      { name: 'Warehouse', cost: 14 },
     ], TUNING.shedCapacityStepPercentages, 'up'),
   },
   {

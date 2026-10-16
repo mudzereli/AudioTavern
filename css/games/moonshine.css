@@ -92,13 +92,15 @@
 /* The one place on this board that is allowed to be red: a full shed is production
    being thrown away, and it is the only thing that costs money while you watch. */
 .moonshine__clog {
+  min-height: 1em;
   margin: 0;
   color: var(--bad);
   font-size: 0.66rem;
 }
 
 .moonshine__clog[hidden] {
-  display: none;
+  display: block;
+  visibility: hidden;
 }
 
 /* What the still is doing --------------------------------------------------- */
