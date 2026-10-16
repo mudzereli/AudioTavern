@@ -231,7 +231,7 @@ const game = {
         art.classList.add('fishing__fish-art');
         art.append(svgEl('use', { href: `../assets/img/fishing-village-fish.svg#fish-${species.id}` }));
         const details = el('span', 'fishing__species-details');
-        const name = el('span', 'fishing__fish-name', species.name);
+        const name = el('span', 'fishing__fish-name', 'Unknown fish');
         const odds = el('span', 'fishing__species-odds');
         // The landed mark is drawn by CSS: this element is the slot, not a readout.
         const landed = el('span', 'fishing__species-count');
@@ -470,6 +470,7 @@ const game = {
         const isAvailable = available.has(species.id);
         const caught = this.setFound.has(species.id);
         const runCount = this.fishCounts.get(species.id) || 0;
+        const fishName = runCount > 0 ? species.name : 'Unknown fish';
         entry.hidden = !isAvailable;
         entry.classList.toggle('fishing__species--caught', caught);
         entry.classList.toggle('fishing__species--last-catch', isAvailable && species.id === this.lastCaughtId);
@@ -477,14 +478,14 @@ const game = {
         // there, so the slot shows a mark rather than a digit. The counts themselves are
         // in the spot's aria-label below.
         entry.classList.toggle('fishing__species--landed', runCount > 0);
-        name.textContent = isAvailable ? species.name : '';
+        name.textContent = isAvailable ? fishName : '';
         // The percentage is the whole row. Rarity and the off-season note were two more
         // tokens doing the same job, and the odds already rank themselves (40 / 20 / 18 /
         // 10 / 2), so the wording lives on in the aria-label below.
         odds.textContent = isAvailable ? formatPercent(catchChance(species, condition)) : '';
         if (isAvailable) {
           if (caught) foundHere += 1;
-          readableFish.push(`${species.rarity} ${species.name}, ${caught ? 'collected this set' : 'not yet collected'}, ${runCount} caught this run, ${catchChanceLabel(species, condition)} chance`);
+          readableFish.push(`${species.rarity} ${fishName}, ${caught ? 'collected this set' : 'not yet collected'}, ${runCount} caught this run, ${catchChanceLabel(species, condition)} chance`);
         }
       }
       button.setAttribute('aria-label', `${spot.name}. ${spot.clue} ${noBite}. ${foundHere} of ${FISH_PER_SPOT} caught here. ${readableFish.join('; ')}. Cast here.`);

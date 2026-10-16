@@ -25,7 +25,7 @@ Every condition uses the same outcome rates: 40% common, 20% uncommon, 18% curre
 
 An available common shows 40%, an uncommon 20%, an in-season rare 18%, each partially matching out-of-season rare 10%, and the fully mismatched out-of-season rare 2%. A spot's displayed no-bite chance is the sum of all blocked outcomes. Those outcomes plus available-fish chances total 100%.
 
-The inline field guide uses distinct inked silhouettes. Available, uncaught fish show their name, current catch chance, and run catch count; caught-this-set fish are marked. Unavailable fish are omitted entirely. Show progress per spot (`0 / 4`) and per set (`0 / 12`). A set completion receives a brief visual celebration before the next set appears. No separate collection screen is used.
+The inline field guide uses distinct folk-art fish silhouettes: large icons fill their entries, staying neutral silhouettes with the name “Unknown fish” until a fish is first caught in the run, then revealing its name, muted species colors, dark ink outlines, crisp dark eyes, and clear cream details. Available fish show their current catch chance; caught-this-set fish are marked. Unavailable fish are omitted entirely. Show progress per spot (`0 / 4`) and per set (`0 / 12`). A set completion receives a brief visual celebration before the next set appears. No separate collection screen is used.
 
 ## Boundaries
 
